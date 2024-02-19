@@ -281,7 +281,7 @@ struct sequential_container_base_dynamic
         return true;
     }
 
-    static value_t& get_data(const itr_t& itr)
+    static value_t& get_data(itr_t& itr)
     {
         return *itr;
     }
@@ -416,7 +416,7 @@ struct sequential_container_base_static
         return false;
     }
 
-    static value_t& get_data(const itr_t& itr)
+    static value_t& get_data(itr_t& itr)
     {
         return *itr;
     }
