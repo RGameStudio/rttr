@@ -62,14 +62,39 @@ struct set_value
 
 // default getter policy
 template<typename T>
+struct get_getter_policy;
+
+template<typename T>
 struct get_getter_policy
 {
-    using type = return_as_copy;
+    static_assert(always_false<T>, "Unsupported getter policy");
 };
 
 // default setter policy
 template<typename T>
+struct get_setter_policy;
+
+template<typename T>
 struct get_setter_policy
+{
+    static_assert(always_false<T>, "Unsupported setter policy");
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+struct as_copy
+{};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<>
+struct get_getter_policy<as_copy>
+{
+    using type = return_as_copy;
+};
+
+template<>
+struct get_setter_policy<as_copy>
 {
     using type = set_value;
 };
@@ -116,7 +141,7 @@ struct get_setter_policy<as_reference_wrapper>
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 
-using property_policy_list = type_list<bind_as_ptr, read_only, as_reference_wrapper>;
+using property_policy_list = type_list<as_copy, bind_as_ptr, read_only, as_reference_wrapper>;
 
 } // end namespace detail;
 

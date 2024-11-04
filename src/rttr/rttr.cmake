@@ -34,6 +34,7 @@ set(HEADER_FILES access_levels.h
                  enumeration.h
                  enum_flags.h
                  filter_item.h
+                 hash_string_constexpr.h
                  instance.h
                  library.h
                  method.h
@@ -45,7 +46,7 @@ set(HEADER_FILES access_levels.h
                  registration.h
                  registration_friend.h
                  sequential_mapper.h
-                 string_view.h
+                 template_argument_data.h
                  rttr_cast.h
                  rttr_enable.h
                  type
@@ -90,7 +91,6 @@ set(HEADER_FILES access_levels.h
                  detail/impl/instance_impl.h
                  detail/impl/rttr_cast_impl.h
                  detail/impl/sequential_mapper_impl.h
-                 detail/impl/string_view_impl.h
                  detail/impl/wrapper_mapper_impl.h
                  detail/library/library_p.h
                  detail/metadata/metadata.h
@@ -103,8 +103,6 @@ set(HEADER_FILES access_levels.h
                  detail/misc/argument_extractor.h
                  detail/misc/class_item_mapper.h
                  detail/misc/data_address_container.h
-                 detail/misc/flat_map.h
-                 detail/misc/flat_multimap.h
                  detail/misc/function_traits.h
                  detail/misc/iterator_wrapper.h
                  detail/misc/misc_type_traits.h
@@ -195,6 +193,7 @@ set(SOURCE_FILES constructor.cpp
                  detail/library/library_win.cpp
                  detail/library/library_unix.cpp
                  detail/method/method_wrapper_base.cpp
+                 detail/metadata/metadata_handler.cpp
                  detail/parameter_info/parameter_info_wrapper_base.cpp
                  detail/property/property_wrapper_base.cpp
                  detail/registration/registration_executer.cpp
@@ -202,4 +201,4 @@ set(SOURCE_FILES constructor.cpp
                  detail/type/type_data.cpp
                  detail/type/type_register.cpp
                  detail/variant/variant_compare.cpp
-                 )
+)

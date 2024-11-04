@@ -107,7 +107,7 @@ struct RTTR_LOCAL type_from_base_classes<DerivedClass, BaseClass, U...>
 {
     static RTTR_INLINE void fill(info_container& vec)
     {
-        static_assert(has_base_class_list<BaseClass>::value, "The parent class has no base class list defined - please use the macro RTTR_ENABLE");
+        static_assert(has_base_class_list<BaseClass>::value, "The parent class has no base class list defined - please use the macro RTTR_DECLARE_ROOT or RTTR_DECLARE_ANCESTORS");
         vec.emplace_back(type::get<BaseClass>(), &rttr_cast_impl<DerivedClass, BaseClass>);
         // retrieve also the types of all base classes of the base classes; you will get an compile error here,
         // when the base class has not defined the 'base_class_list' typedef

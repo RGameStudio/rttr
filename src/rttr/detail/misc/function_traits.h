@@ -185,6 +185,35 @@ namespace detail
 
     /////////////////////////////////////////////////////////////////////////////////////
 
+    template<typename>
+    static RTTR_CONSTEXPR_OR_CONST bool always_false = false;
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    template<typename T, typename E = void>
+    struct accessor_invoke_result
+    {
+        static_assert(always_false<T>, "Accessor type T is not supported");
+        using type = void;
+    };
+
+    template<typename T>
+    struct accessor_invoke_result<T, std::enable_if_t<function_traits<T>::arg_count == 0>>
+    {
+        using type = std::invoke_result_t<T>;
+    };
+
+    template<typename T>
+    struct accessor_invoke_result<T, std::enable_if_t<function_traits<T>::arg_count == 1>>
+    {
+        using type = std::invoke_result_t<T, param_types_t<T, 0>>;
+    };
+
+    template<typename T>
+    using accessor_invoke_result_t = typename accessor_invoke_result<T>::type;
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
 } // end namespace detail
 } // end namespace rttr
 

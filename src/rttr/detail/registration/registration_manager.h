@@ -37,8 +37,10 @@
 #include "rttr/detail/destructor/destructor_wrapper_base.h"
 #include "rttr/detail/enumeration/enumeration_wrapper_base.h"
 
+#include <deque>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 namespace rttr
 {
@@ -51,6 +53,8 @@ namespace detail
  */
 class RTTR_LOCAL registration_manager
 {
+        using type_data_ptr = std::shared_ptr<type_data>;
+
     public:
         registration_manager()
         {
@@ -61,14 +65,20 @@ class RTTR_LOCAL registration_manager
             unregister();
         }
 
-        type_data* add_item(std::unique_ptr<type_data> obj)
+        type_data* add_item(type_data&& obj)
         {
-            auto reg_type = type_register::register_type(obj.get());
-            const auto was_type_stored = (reg_type == obj.get());
-            if (was_type_stored)
-                m_type_data_list.push_back(std::move(obj)); // so we have to unregister it later
+            auto ret = type_register::register_type(std::move(obj));
+            if (!ret.second)
+            {
+                return ret.first;
+            }
 
-            return reg_type;
+            {
+                std::lock_guard lock(m_type_data_list_mutex);
+                m_type_data_list.push_back(ret.first); // so we have to unregister it later
+            }
+
+            return ret.first;
         }
 
         void add_item(std::unique_ptr<constructor_wrapper_base> ctor)
@@ -162,7 +172,7 @@ class RTTR_LOCAL registration_manager
                 type_register::unregister_less_than_comparator(item.get());
 
             for (auto& type : m_type_data_list)
-                type_register::unregister_type(type.get());
+                type_register::unregister_type(type);
 
             type_register::unregister_reg_manager(this);
 
@@ -188,7 +198,8 @@ class RTTR_LOCAL registration_manager
 
     private:
         bool                                                    m_should_unregister = true;
-        std::vector<std::unique_ptr<type_data>>                 m_type_data_list;
+        std::mutex                                              m_type_data_list_mutex;
+        std::deque<type_data*>                                  m_type_data_list;
 
         std::vector<std::unique_ptr<constructor_wrapper_base>>  m_constructors;
         std::vector<std::unique_ptr<destructor_wrapper_base>>   m_destructors;

@@ -44,14 +44,14 @@ class enum_data
 {
     public:
         enum_data() {}
-        enum_data(string_view name, Enum_Type value) : m_name(name), m_value(value) { }
+        enum_data(std::string_view name, Enum_Type value) : m_name(name), m_value(value) { }
 
-        string_view get_name() const    { return m_name;  }
-        Enum_Type get_value() const     { return m_value; }
+        std::string_view get_name() const    { return m_name;  }
+        Enum_Type get_value() const          { return m_value; }
 
     private:
-        string_view m_name;
-        Enum_Type   m_value;
+        std::string_view m_name;
+        Enum_Type        m_value;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

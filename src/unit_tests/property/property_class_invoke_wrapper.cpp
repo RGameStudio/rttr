@@ -34,7 +34,6 @@
 #include <catch/catch.hpp>
 
 using namespace rttr;
-using namespace std;
 
 
 struct property_wrapper_test_base
@@ -42,14 +41,16 @@ struct property_wrapper_test_base
     virtual ~property_wrapper_test_base() {}
     int p1;
 
-    RTTR_ENABLE();
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct property_wrapper_test : property_wrapper_test_base
 {
     bool p2;
 
-    RTTR_ENABLE(property_wrapper_test_base)
+    RTTR_DECLARE_ANCESTORS(property_wrapper_test_base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +74,7 @@ TEST_CASE("property - class - get/set - std::shared_ptr", "[property]")
 {
     std::shared_ptr<property_wrapper_test_base> obj = std::make_shared<property_wrapper_test_base>();
 
-    type obj_t = type::get(obj);
+    type obj_t = type::get<decltype(obj)>();
     REQUIRE(obj_t.is_wrapper() == true);
 
     type wrapper_t = obj_t.get_wrapped_type();
@@ -86,9 +87,9 @@ TEST_CASE("property - class - get/set - std::shared_ptr", "[property]")
     CHECK(ret == true);
 
     variant val = p1.get_value(obj);
-    REQUIRE(val.is_type<int>() == true);
+    REQUIRE(val.is_type<std::reference_wrapper<int>>() == true);
 
-    CHECK(val.get_value<int>() == 2);
+    CHECK(val.get_value_unsafe<std::reference_wrapper<int>>().get() == 2);
     CHECK(obj.get()->p1 == 2);
 }
 
@@ -98,7 +99,7 @@ TEST_CASE("property - class - get/set - std::shared_ptr in variant", "[property]
 {
     variant var = std::make_shared<property_wrapper_test_base>();
     CHECK(var.get_type().is_wrapper() == true);
-    CHECK(var.get_type() == type::get<shared_ptr<property_wrapper_test_base>>());
+    CHECK(var.get_type() == type::get<std::shared_ptr<property_wrapper_test_base>>());
     CHECK(var.get_type().get_wrapped_type() == type::get<property_wrapper_test_base*>());
 
     type wrapper_t = var.get_type().get_wrapped_type();
@@ -109,8 +110,8 @@ TEST_CASE("property - class - get/set - std::shared_ptr in variant", "[property]
     CHECK(ret == true);
 
     variant val = p1.get_value(var);
-    REQUIRE(val.is_type<int>() == true);
-    CHECK(val.get_value<int>() == 2);
+    REQUIRE(val.is_type<std::reference_wrapper<int>>() == true);
+    CHECK(val.get_value_unsafe<std::reference_wrapper<int>>().get() == 2);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -120,7 +121,7 @@ TEST_CASE("property - class - get/set - reference_wrapper", "[property]")
     property_wrapper_test_base instance;
     std::reference_wrapper<property_wrapper_test_base> obj = std::ref(instance);
 
-    type obj_t = type::get(obj);
+    type obj_t = type::get<decltype(obj)>();
     REQUIRE(obj_t.is_wrapper() == true);
 
     type wrapper_t = obj_t.get_wrapped_type();
@@ -134,8 +135,8 @@ TEST_CASE("property - class - get/set - reference_wrapper", "[property]")
     CHECK(ret == true);
 
     variant val = p1.get_value(obj);
-    REQUIRE(val.is_type<int>() == true);
-    CHECK(val.get_value<int>() == 2);
+    REQUIRE(val.is_type<std::reference_wrapper<int>>() == true);
+    CHECK(val.get_value_unsafe<std::reference_wrapper<int>>().get() == 2);
     CHECK(obj.get().p1 == 2);
     CHECK(instance.p1 == 2);
 }
@@ -147,16 +148,16 @@ TEST_CASE("property - class - get/set - shared_ptr with inheritance", "[property
     SECTION("from bottom to base")
     {
         std::shared_ptr<property_wrapper_test> obj = std::make_shared<property_wrapper_test>();
-        property p1 = type::get(obj).get_wrapped_type().get_property("p1");
+        property p1 = type::get<decltype(obj)>().get_wrapped_type().get_property("p1");
         CHECK(p1.is_valid() == true);
         // access
         bool ret = p1.set_value(obj, 2);
         CHECK(ret == true);
 
         variant val = p1.get_value(obj);
-        REQUIRE(val.is_type<int>() == true);
+        REQUIRE(val.is_type<std::reference_wrapper<int>>() == true);
 
-        CHECK(val.get_value<int>() == 2);
+        CHECK(val.get_value_unsafe<std::reference_wrapper<int>>().get() == 2);
         CHECK(obj.get()->p1 == 2);
     }
 
@@ -164,15 +165,15 @@ TEST_CASE("property - class - get/set - shared_ptr with inheritance", "[property
     {
         std::shared_ptr<property_wrapper_test_base> obj = std::make_shared<property_wrapper_test>();
 
-        property p2 = type::get(*obj.get()).get_property("p2");
+        property p2 = obj->get_type().get_property("p2");
         CHECK(p2.is_valid() == true);
         // access
         bool ret = p2.set_value(obj, true);
         CHECK(ret == true);
 
         variant var = p2.get_value(obj);
-        REQUIRE(var.is_type<bool>() == true);
-        CHECK(var.get_value<bool>() == true);
+        REQUIRE(var.is_type<std::reference_wrapper<bool>>() == true);
+        CHECK(var.get_value_unsafe<std::reference_wrapper<bool>>().get() == true);
     }
 }
 

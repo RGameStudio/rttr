@@ -176,12 +176,13 @@ struct sequential_container_mapper_wrapper : iterator_wrapper_base<Tp>
 
     /////////////////////////////////////////////////////////////////////////
 
-    template<typename..., typename C = ConstType, enable_if_t<!std::is_const<C>::value, int> = 0>
+    template<bool Move, typename..., typename C = ConstType, enable_if_t<!std::is_const<C>::value, int> = 0>
     static void insert(void* container, argument& value, const iterator_data& itr_pos, iterator_data& itr)
     {
-        if (value.get_type() == ::rttr::type::get<value_t>())
+        if (value.is_type<value_t>())
         {
-            auto ret = base_class::insert(get_container(container), value.get_value<value_t>(), itr_wrapper::get_iterator(itr_pos));
+            using value_ref_t = std::conditional_t<Move, value_t&&, value_t>;
+            auto ret = base_class::insert(get_container(container), value.get_value<value_ref_t>(), itr_wrapper::get_iterator(itr_pos));
             itr_wrapper::create(itr, ret);
         }
         else
@@ -190,7 +191,7 @@ struct sequential_container_mapper_wrapper : iterator_wrapper_base<Tp>
         }
     }
 
-    template<typename..., typename C = ConstType, enable_if_t<std::is_const<C>::value, int> = 0>
+    template<bool Move, typename..., typename C = ConstType, enable_if_t<std::is_const<C>::value, int> = 0>
     static void insert(void* container, argument& value, const iterator_data& itr_pos, iterator_data& itr)
     {
         end(container, itr);
@@ -198,24 +199,25 @@ struct sequential_container_mapper_wrapper : iterator_wrapper_base<Tp>
 
     /////////////////////////////////////////////////////////////////////////
     // is_const<T> is used because of std::initializer_list, it can only return a constant value
-    template<typename..., typename C = ConstType, typename ReturnType = decltype(base_class::get_value(std::declval<C&>(), 0)),
+    template<bool Move, typename..., typename C = ConstType, typename ReturnType = decltype(base_class::get_value(std::declval<C&>(), 0)),
              enable_if_t<!std::is_const<C>::value &&
                          !std::is_array<remove_reference_t<ReturnType>>::value &&
                          !std::is_const<remove_reference_t<ReturnType>>::value, int> = 0>
     static bool set_value(void* container, std::size_t index, argument& value)
     {
-        if (value.get_type() == ::rttr::type::get<value_t>())
+        if (value.is_type<value_t>())
         {
-            base_class::get_value(get_container(container), index) = value.get_value<value_t>();
+            using value_ref_t = std::conditional_t<Move, value_t&&, value_t>;
+            base_class::get_value(get_container(container), index) = value.get_value<value_ref_t>();
             return true;
         }
-        else
+        else // TODO: try conversion?
         {
             return false;
         }
     }
 
-    template<typename..., typename C = ConstType, typename ReturnType = decltype(base_class::get_value(std::declval<C&>(), 0)),
+    template<bool Move, typename..., typename C = ConstType, typename ReturnType = decltype(base_class::get_value(std::declval<C&>(), 0)),
              enable_if_t<!std::is_const<C>::value &&
                          std::is_array<remove_reference_t<ReturnType>>::value &&
                          !std::is_const<remove_reference_t<ReturnType>>::value, int> = 0>
@@ -223,16 +225,19 @@ struct sequential_container_mapper_wrapper : iterator_wrapper_base<Tp>
     {
         if (value.get_type() == ::rttr::type::get<value_t>())
         {
-            copy_array(value.get_value<value_t>(), base_class::get_value(get_container(container), index));
+            if constexpr (Move)
+                move_array(value.get_value<value_t&&>(), base_class::get_value(get_container(container), index));
+            else
+                copy_array(value.get_value<value_t>(), base_class::get_value(get_container(container), index));
             return true;
         }
-        else
+        else // TODO: try conversion?
         {
             return false;
         }
     }
 
-    template<typename..., typename C = ConstType, typename ReturnType = decltype(base_class::get_value(std::declval<C&>(), 0)),
+    template<bool Move, typename..., typename C = ConstType, typename ReturnType = decltype(base_class::get_value(std::declval<C&>(), 0)),
              enable_if_t<std::is_const<C>::value ||
                          std::is_const<remove_reference_t<ReturnType>>::value, int> = 0>
     static bool set_value(void* container, std::size_t index, argument& value)
@@ -264,6 +269,20 @@ struct sequential_container_mapper_wrapper : iterator_wrapper_base<Tp>
         return variant(static_cast<value_t>(base_class::get_value(get_container(container), index)));
     }
 
+    /////////////////////////////////////////////////////////////////////////
+
+    template<typename..., typename C = ConstType, enable_if_t<!std::is_const<C>::value, int> = 0>
+    static void reserve(void* container, std::size_t n)
+    {
+        base_class::reserve(get_container(container), n);
+    }
+
+    template<typename..., typename C = ConstType, enable_if_t<std::is_const<C>::value, int> = 0>
+    static void reserve(void* container, std::size_t n)
+    {
+        // cannot clear a const container...
+    }
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -281,6 +300,8 @@ struct sequential_container_base_dynamic
         return true;
     }
 
+    //-- TODO (b_sviglo): removed const qualifier because itr_t may be just a pointer. 
+    //--				  Make a bug report to the author 
     static value_t& get_data(itr_t& itr)
     {
         return *itr;
@@ -348,14 +369,33 @@ struct sequential_container_base_dynamic
         return container.erase(itr);
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const itr_t& itr_pos)
     {
-        return container.insert(itr_pos, value);
+        return container.insert(itr_pos, std::forward<V>(value));
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const const_itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const const_itr_t& itr_pos)
     {
-        return container.insert(itr_pos, value);
+        return container.insert(itr_pos, std::forward<V>(value));
+    }
+
+    static void reserve(container_t& container, size_t n)
+    {
+        reserve_impl<container_t>(container, n);
+    }
+
+private:
+    template<typename U>
+    static detail::enable_if_t<detail::has_reserve<U>::value, void> reserve_impl(U& container, size_t n)
+    {
+        container.reserve(n);
+    }
+
+    template<typename U>
+    static detail::enable_if_t<!detail::has_reserve<U>::value, void> reserve_impl(U& container, size_t n)
+    {
     }
 };
 
@@ -416,6 +456,8 @@ struct sequential_container_base_static
         return false;
     }
 
+    //-- TODO (b_sviglo): removed const qualifier because itr_t may be just a pointer. 
+    //--				  Make a bug report to the author	 
     static value_t& get_data(itr_t& itr)
     {
         return *itr;
@@ -481,12 +523,14 @@ struct sequential_container_base_static
         return end(container);
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const itr_t& itr_pos)
     {
         return end(container);
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const const_itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const const_itr_t& itr_pos)
     {
         return end(container);
     }
@@ -500,6 +544,11 @@ struct sequential_container_base_static
     {
         return container[index];
     }
+
+    static void reserve(container_t& container, size_t n)
+    {
+    }
+
 };
 
 } // end namespace detail
@@ -580,7 +629,8 @@ struct sequential_container_mapper<T[N]>
         return end(container);
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const itr_t& itr_pos)
     {
         return end(container);
     }
@@ -593,6 +643,10 @@ struct sequential_container_mapper<T[N]>
     static const value_t& get_value(const container_t& container, std::size_t index)
     {
         return container[index];
+    }
+
+    static void reserve(container_t& container, size_t n)
+    {
     }
 };
 
@@ -671,7 +725,8 @@ struct sequential_container_mapper<std::initializer_list<T>>
         return end(container);
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const itr_t& itr_pos)
     {
         return end(container);
     }
@@ -688,6 +743,10 @@ struct sequential_container_mapper<std::initializer_list<T>>
         auto it = container.begin();
         std::advance(it, index);
         return *it;
+    }
+
+    static void reserve(container_t& container, size_t n)
+    {
     }
 };
 
@@ -782,12 +841,14 @@ struct sequential_container_mapper<std::vector<bool>>
 #endif
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const itr_t& itr_pos)
     {
         return container.insert(itr_pos, value);
     }
 
-    static itr_t insert(container_t& container, const value_t& value, const const_itr_t& itr_pos)
+    template<typename V>
+    static itr_t insert(container_t& container, V&& value, const const_itr_t& itr_pos)
     {
 // to prevent following gcc bug: 'no matching function for call to `std::vector<bool>::insert(const const_itr_t&, bool) return container.insert(itr, bool);`
 // vec.erase(vec.cbegin()); fails for unkown reason with this old version
@@ -808,6 +869,11 @@ struct sequential_container_mapper<std::vector<bool>>
     static std::vector<bool>::const_reference get_value(const container_t& container, std::size_t index)
     {
         return container[index];
+    }
+
+    static void reserve(container_t& container, size_t n)
+    {
+        container.reserve(n);
     }
 };
 
@@ -907,6 +973,10 @@ struct sequential_container_empty
     static variant get_value(void* container, std::size_t index)
     {
         return variant();
+    }
+
+    static void reserve(void* container, std::size_t n)
+    {
     }
 };
 

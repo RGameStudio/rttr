@@ -54,7 +54,7 @@ class destructor_wrapper : public destructor_wrapper_base
                 // although an exception can occur when calling 'delete',
                 // nobody should throw an exception in destructor, so we don't catch the exception
                 // and just terminate the application
-                delete obj.get_value<ClassType*>();
+                delete obj.get_value_unsafe<ClassType*>();
                 obj = variant();
                 return true;
             }

@@ -110,10 +110,10 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
         std::vector<constructor> ctors(range.begin(), range.end());
         REQUIRE(ctors.size() == 3);
 
-        CHECK(ctors[0].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[0].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( std::string )");
 
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("static_item | public_access")
@@ -136,10 +136,10 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
         std::vector<constructor> ctors(range.begin(), range.end());
         REQUIRE(ctors.size() == 3);
 
-        CHECK(ctors[0].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[0].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( std::string )");
 
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("instance_item | static_item | public_access")
@@ -164,10 +164,10 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
         std::vector<constructor> ctors(range.begin(), range.end());
         REQUIRE(ctors.size() == 3);
 
-        CHECK(ctors[0].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[0].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( std::string )");
 
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("instance_item | static_item | public_access | non_public_access")
@@ -181,9 +181,9 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
 
         CHECK(ctors[0].get_signature() == "constructor_query_test( )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( constructor_query_test const & )");
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[3].get_signature() == "constructor_query_test( std::string )");
-        CHECK(ctors[4].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[4].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("instance_item | public_access | declared_only")
@@ -221,10 +221,10 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
         std::vector<constructor> ctors(range.begin(), range.end());
         REQUIRE(ctors.size() == 3);
 
-        CHECK(ctors[0].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[0].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( std::string )");
 
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("static_item | non_public_access | declared_only")
@@ -236,10 +236,10 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
         std::vector<constructor> ctors(range.begin(), range.end());
         REQUIRE(ctors.size() == 3);
 
-        CHECK(ctors[0].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[0].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( std::string )");
 
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("instance_item | static_item | public_access | declared_only")
@@ -264,10 +264,10 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
         std::vector<constructor> ctors(range.begin(), range.end());
         REQUIRE(ctors.size() == 3);
 
-        CHECK(ctors[0].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[0].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( std::string )");
 
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
     }
 
     SECTION("instance_item | static_item | public_access | non_public_access | declared_only")
@@ -282,9 +282,9 @@ TEST_CASE("constructor - get_constructors(filter_items)", "[constructor]")
 
         CHECK(ctors[0].get_signature() == "constructor_query_test( )");
         CHECK(ctors[1].get_signature() == "constructor_query_test( constructor_query_test const & )");
-        CHECK(ctors[2].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[2].get_signature() == "constructor_query_test( int32 )");
         CHECK(ctors[3].get_signature() == "constructor_query_test( std::string )");
-        CHECK(ctors[4].get_signature() == "constructor_query_test( int )");
+        CHECK(ctors[4].get_signature() == "constructor_query_test( int32 )");
     }
 }
 

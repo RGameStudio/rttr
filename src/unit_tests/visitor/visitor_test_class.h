@@ -39,7 +39,8 @@ struct visitor_test_class_base
 
     int base_property;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct visitor_test_class : visitor_test_class_base
@@ -58,7 +59,8 @@ struct visitor_test_class : visitor_test_class_base
     void set_value(int value) { m_value = value; }
     int get_value() const { return m_value; }
 
-    RTTR_ENABLE(visitor_test_class_base)
+    RTTR_DECLARE_ANCESTORS(visitor_test_class_base)
+    RTTR_ENABLE_OBJECT_INFO()
 
     private:
         int m_value;

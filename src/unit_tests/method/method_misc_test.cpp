@@ -29,7 +29,6 @@
 #include <catch/catch.hpp>
 
 using namespace rttr;
-using namespace std;
 
 enum E_MetaData
 {
@@ -57,14 +56,17 @@ struct base_class_with_methods
     base_class_with_methods(){}
     void some_method() {}
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct derived_class_without_registered_methods : base_class_with_methods
 {
-    RTTR_ENABLE(base_class_with_methods)
+    RTTR_DECLARE_ANCESTORS(base_class_with_methods)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
+inline static constexpr uint64_t c_text_meta_key = rttr::hash_string("Text");
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -74,7 +76,7 @@ RTTR_REGISTRATION
         .method("func", &method_misc_test::func)
         (
             metadata(E_MetaData::SCRIPTABLE, true),
-            metadata("Text",  "Some funky description")
+            metadata(c_text_meta_key,  "Some funky description")
         )
         .method("func_return", &method_misc_test::func_return)
         .method("static_func", &method_misc_test::static_func)
@@ -83,7 +85,7 @@ RTTR_REGISTRATION
         (
             default_arguments(std::string("text")),
             metadata(E_MetaData::SCRIPTABLE, true),
-            metadata("Text",  "Some funky description")
+            metadata(c_text_meta_key,  "Some funky description")
         )
         ;
 
@@ -194,11 +196,11 @@ TEST_CASE("method - get_metadata()", "[method]")
     method meth = type::get_by_name("method_misc_test").get_method("func");
     variant var = meth.get_metadata(E_MetaData::SCRIPTABLE);
     REQUIRE(var.is_type<bool>() == true);
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
-    var = meth.get_metadata("Text");
+    var = meth.get_metadata(c_text_meta_key);
     REQUIRE(var.is_type<std::string>() == true);
-    CHECK(var.get_value<std::string>() == "Some funky description");
+    CHECK(var.get_value_unsafe<std::string>() == "Some funky description");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -208,11 +210,11 @@ TEST_CASE("method - default func - get_metadata()", "[method]")
     method meth = type::get_by_name("method_misc_test").get_method("default_func");
     variant var = meth.get_metadata(E_MetaData::SCRIPTABLE);
     REQUIRE(var.is_type<bool>() == true);
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
-    var = meth.get_metadata("Text");
+    var = meth.get_metadata(c_text_meta_key);
     REQUIRE(var.is_type<std::string>() == true);
-    CHECK(var.get_value<std::string>() == "Some funky description");
+    CHECK(var.get_value_unsafe<std::string>() == "Some funky description");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -34,12 +34,14 @@ struct instance_base
 {
     virtual ~instance_base() {}
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct instance_derived : instance_base
 {
-    RTTR_ENABLE(instance_base)
+    RTTR_DECLARE_ANCESTORS(instance_base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 

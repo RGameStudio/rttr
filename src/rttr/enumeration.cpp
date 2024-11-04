@@ -27,6 +27,7 @@
 
 #include "rttr/enumeration.h"
 #include "rttr/detail/enumeration/enumeration_wrapper_base.h"
+#include "rttr/hash_string_constexpr.h"
 #include "rttr/argument.h"
 
 #include <utility>
@@ -77,7 +78,7 @@ enumeration::operator bool() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-string_view enumeration::get_name() const RTTR_NOEXCEPT
+std::string_view enumeration::get_name() const RTTR_NOEXCEPT
 {
     return m_wrapper->get_type().get_name();
 }
@@ -105,14 +106,14 @@ type enumeration::get_declaring_type() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant enumeration::get_metadata(const variant& key) const
+const variant& enumeration::get_metadata(uint64_t key) const
 {
     return m_wrapper->get_metadata(key);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-array_range<string_view> enumeration::get_names() const RTTR_NOEXCEPT
+array_range<std::string_view> enumeration::get_names() const RTTR_NOEXCEPT
 {
     return m_wrapper->get_names();
 }
@@ -126,14 +127,14 @@ array_range<variant> enumeration::get_values() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-string_view enumeration::value_to_name(argument value) const
+std::string_view enumeration::value_to_name(argument value) const
 {
     return m_wrapper->value_to_name(value);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant enumeration::name_to_value(string_view name) const
+variant enumeration::name_to_value(std::string_view name) const
 {
     return m_wrapper->name_to_value(name);
 }

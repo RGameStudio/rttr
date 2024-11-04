@@ -32,7 +32,7 @@
 
 #include <string>
 #include <cctype>
-#include "rttr/string_view.h"
+#include <string_view>
 
 
 /////////////////////////////////////////////////////////////////////////////////

@@ -39,8 +39,8 @@ struct method_order_test_base
     std::string whoami() { return "I am a base method" ; }
     virtual std::string vwhoami() { return "I am a virtual base method" ; }
 
-    RTTR_ENABLE()
-
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_order_test_derived : method_order_test_base
@@ -51,7 +51,8 @@ struct method_order_test_derived : method_order_test_base
     std::string whoami() { return "I am a non-virtual derived method with same name" ; }
     std::string vwhoami() override { return "I am a virtual derived method with same name" ; }
 
-    RTTR_ENABLE(method_order_test_base)
+    RTTR_DECLARE_ANCESTORS(method_order_test_base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +74,7 @@ RTTR_REGISTRATION
 // then invokes the function
 std::string rttr_invoke_approach1(
         const rttr::instance& vinst,
-        const rttr::string_view& meth_name) {
+        const std::string_view& meth_name) {
 
     const auto& inst_t = vinst.get_type();
 
@@ -86,14 +87,14 @@ std::string rttr_invoke_approach1(
     REQUIRE(iam_var.is_valid() == true);
     REQUIRE(iam_var.is_type<std::string>() == true) ;
 
-    return iam_var.get_value<std::string>();
+    return iam_var.get_value_unsafe<std::string>();
 }
 
 // approach 2 invokes the method via rttr::type
 // different rttr code - range based for loop
 std::string rttr_invoke_approach2(
         const rttr::instance& vinst,
-        const rttr::string_view& meth_name) {
+        const std::string_view& meth_name) {
 
     const auto& inst_t = vinst.get_type();
 
@@ -102,7 +103,7 @@ std::string rttr_invoke_approach2(
     REQUIRE(iam_var.is_valid() == true);
     REQUIRE(iam_var.is_type<std::string>() == true) ;
 
-    return iam_var.get_value<std::string>();
+    return iam_var.get_value_unsafe<std::string>();
 }
 
 template<class TT>

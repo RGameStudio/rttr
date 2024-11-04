@@ -26,12 +26,41 @@
 *************************************************************************************/
 
 #include <rttr/registration>
+#include <rttr/variant.h>
 
 #include <vector>
 #include <map>
 #include <list>
 #include <set>
 #include <string>
+#include <type_traits>
+#include <cstdint>
+
+namespace
+{
+
+template<typename T, bool Signed = std::is_signed_v<T>, size_t Size = sizeof(T)>
+struct IntRegister;
+
+#define DECLARE_INT_REGISTER(Signed, Size, Name) \
+template<typename T> \
+struct IntRegister<T, Signed, Size> \
+{ \
+    IntRegister() \
+    { \
+        RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(T) \
+        rttr::registration::class_<T>(Name); \
+    } \
+};
+
+DECLARE_INT_REGISTER(true,  2, "int16")
+DECLARE_INT_REGISTER(false, 2, "uint16")
+DECLARE_INT_REGISTER(true,  4, "int32")
+DECLARE_INT_REGISTER(false, 4, "uint32")
+DECLARE_INT_REGISTER(true,  8, "int64")
+DECLARE_INT_REGISTER(false, 8, "uint64")
+
+}
 
 // explicit instantiation of std::string needed, otherwise we get a linker error with clang on osx
 // thats a bug in libc++, because of interaction with __attribute__ ((__visibility__("hidden"), __always_inline__)) in std::string
@@ -50,18 +79,26 @@ RTTR_REGISTRATION
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(unsigned char)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(char)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(wchar_t)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(short int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(unsigned short int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(unsigned int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(long int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(unsigned long int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(long long int)
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(unsigned long long int)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(float)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(double)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(long double)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(std::string)
+
+    IntRegister<std::int16_t>();
+    IntRegister<std::uint16_t>();
+    IntRegister<std::int32_t>();
+    IntRegister<std::uint32_t>();
+    IntRegister<std::int64_t>();
+    IntRegister<std::uint64_t>();
+
+    IntRegister<short int>();
+    IntRegister<unsigned short int>();
+    IntRegister<int>();
+    IntRegister<unsigned int>();
+    IntRegister<long int>();
+    IntRegister<unsigned long int>();
+    IntRegister<long long int>();
+    IntRegister<unsigned long long int>();
 
     registration::class_<std::vector<bool>>("std::vector<bool>");
     registration::class_<std::vector<int>>("std::vector<int>");
@@ -70,11 +107,15 @@ RTTR_REGISTRATION
 
 
     registration::class_<std::string>("std::string")
-                .constructor<>()
-                .constructor<const std::string&>()
-                .constructor<const std::string&, unsigned int, unsigned int>()
-                .constructor<const char*>()
-                .constructor<const char*, unsigned int>()
-                .constructor<unsigned int, char>()
+                .constructor<>()(policy::ctor::as_object)
+                .constructor<const std::string&>()(policy::ctor::as_object)
+                .constructor<const std::string&, unsigned int, unsigned int>()(policy::ctor::as_object)
+                .constructor<const char*>()(policy::ctor::as_object)
+                .constructor<const char*, unsigned int>()(policy::ctor::as_object)
+                .constructor<unsigned int, char>()(policy::ctor::as_object)
                 ;
+
+    // required to enforce proper order of registration/unregistration of rttr::variant and reference_wrapper to it
+    registration::class_<rttr::variant>("rttr::variant");
+    registration::class_<std::reference_wrapper<rttr::variant>>("std::reference_wrapper<rttr::variant>");
 }

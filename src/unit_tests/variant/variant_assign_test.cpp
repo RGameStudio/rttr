@@ -129,7 +129,7 @@ TEST_CASE("move assignment", "[variant]")
         variant b;
         b = std::move(obj);
         CHECK(obj.moved_from == true);
-        CHECK(b.get_value<simple_type>().moved == true );
+        CHECK(b.get_value_unsafe<simple_type>().moved == true );
     }
 
     SECTION("big type")
@@ -142,7 +142,7 @@ TEST_CASE("move assignment", "[variant]")
         variant b;
         b = std::move(obj);
         CHECK(obj.moved_from == true);
-        CHECK(b.get_value<big_type>().moved == true );
+        CHECK(b.get_value_unsafe<big_type>().moved == true );
     }
 }
 

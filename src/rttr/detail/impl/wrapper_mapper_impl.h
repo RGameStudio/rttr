@@ -136,8 +136,7 @@ namespace detail
 //////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-using wrapper_mapper_t = typename wrapper_mapper<typename std::remove_cv<typename std::remove_reference<T>::type
-                                                                   >::type>::wrapped_type;
+using wrapper_mapper_t = typename wrapper_mapper<std::remove_cv_t<std::remove_reference_t<T>>>::wrapped_type;
 
 //////////////////////////////////////////////////////////////////////////////////////
 

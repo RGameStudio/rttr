@@ -33,9 +33,9 @@
 #include "rttr/parameter_info.h"
 #include "rttr/access_levels.h"
 #include "rttr/array_range.h"
-#include "rttr/string_view.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace rttr
@@ -59,7 +59,7 @@ class RTTR_API constructor_wrapper_base
     public:
         constructor_wrapper_base() RTTR_NOEXCEPT;
         virtual ~constructor_wrapper_base();
-        string_view get_signature() const RTTR_NOEXCEPT;
+        std::string_view get_signature() const RTTR_NOEXCEPT;
 
         virtual bool is_valid() const RTTR_NOEXCEPT;
         virtual type get_declaring_type() const RTTR_NOEXCEPT;
@@ -68,7 +68,7 @@ class RTTR_API constructor_wrapper_base
         virtual std::vector<bool> get_is_reference() const RTTR_NOEXCEPT;
         virtual std::vector<bool> get_is_const() const RTTR_NOEXCEPT;
         virtual array_range<parameter_info> get_parameter_infos() const RTTR_NOEXCEPT;
-        virtual variant get_metadata(const variant& key) const;
+        virtual const variant& get_metadata(uint64_t key) const;
 
         virtual variant invoke() const;
         virtual variant invoke(argument& arg1) const;
@@ -88,7 +88,7 @@ class RTTR_API constructor_wrapper_base
     private:
         void create_signature_string() RTTR_NOEXCEPT;
     private:
-        string_view m_signature_view;
+        std::string_view m_signature_view;
         std::string m_signature;
 };
 

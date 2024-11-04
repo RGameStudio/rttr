@@ -84,8 +84,11 @@ using variant_policy = conditional_t<std::is_same<T, void_variant_type>::value,
                                      variant_data_policy_void,
                                      conditional_t<is_nullptr_t<T>::value,
                                                    variant_data_policy_nullptr_t,
-                                                   conditional_t<std::is_same<T, std::string>::value || is_one_dim_char_array<T>::value,
-                                                                 variant_data_policy_string,
+                                                   conditional_t<std::is_same<T, std::string>::value || std::is_same<T, std::string_view>::value || is_one_dim_char_array<T>::value,
+                                                                 conditional_t<std::is_same<T, std::string_view>::value,
+                                                                               variant_data_policy_small<T, default_type_converter<std::string_view>>,
+                                                                               variant_data_policy_string
+                                                                              >,
                                                                  conditional_t<can_place_in_variant<T>::value,
                                                                                conditional_t<std::is_arithmetic<T>::value,
                                                                                              variant_data_policy_arithmetic<T>,
@@ -123,6 +126,8 @@ enum class variant_policy_operation : uint8_t
     SWAP,
     EXTRACT_WRAPPED_VALUE,
     CREATE_WRAPPED_VALUE,
+    ASSIGN_WRAPPED_VALUE,
+    EXTRACT_POINTER_VALUE,
     GET_VALUE,
     GET_TYPE,
     GET_PTR,
@@ -146,10 +151,10 @@ using variant_policy_func = bool (*)(variant_policy_operation, const variant_dat
 
 /////////////////////////////////////////////////////////////////////////////////////////
 #define COMPARE_EQUAL_PRE_PROC(lhs, rhs, ok)                              \
-        compare_equal(Tp::get_value(src_data), rhs.get_value<T>(), ok)
+        compare_equal(Tp::get_value(src_data), rhs.get_value_unsafe<T>(), ok)
 
 #define COMPARE_LESS_PRE_PROC(lhs, rhs, result)                           \
-        compare_less_than(Tp::get_value(src_data), rhs.get_value<T>(), result)
+        compare_less_than(Tp::get_value(src_data), rhs.get_value_unsafe<T>(), result)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -171,12 +176,10 @@ static RTTR_INLINE is_nullptr(T& to)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-template<typename T>
-using is_copyable = std::is_copy_constructible<T>;
 
 template<typename T, typename Tp = decay_except_array_t<wrapper_mapper_t<T>> >
 enable_if_t<is_copyable<Tp>::value &&
-            is_wrapper<T>::value, variant> get_wrapped_value(T& value)
+            is_wrapper<T>::value, variant> get_wrapped_value_unsafe(T& value)
 {
     using raw_wrapper_type = remove_cv_t<remove_reference_t<T>>;
     return variant(wrapper_mapper<raw_wrapper_type>::get(value));
@@ -186,7 +189,59 @@ enable_if_t<is_copyable<Tp>::value &&
 
 template<typename T, typename Tp = decay_except_array_t<wrapper_mapper_t<T>>>
 enable_if_t<!is_copyable<Tp>::value ||
-            !is_wrapper<T>::value, variant> get_wrapped_value(T& value)
+            !is_wrapper<T>::value, variant> get_wrapped_value_unsafe(T& value)
+{
+    return variant();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+enable_if_t<is_wrapper<T>::value, bool> assign_wrapped_value(T& target, variant&& value)
+{
+    using raw_wrapper_type = remove_cv_t<remove_reference_t<T>>;
+    using mapper = wrapper_mapper<raw_wrapper_type>;
+    using wrapped_type = typename mapper::wrapped_type;
+    using raw_wrapped_type = remove_reference_t<remove_pointer_t<wrapped_type>>;
+    if constexpr ((std::is_pointer_v<wrapped_type> || std::is_reference_v<wrapped_type>) && std::is_move_assignable_v<raw_wrapped_type>)
+    {
+        if (!value.is_type<raw_wrapped_type>())
+            return false;
+
+        if constexpr (std::is_pointer_v<wrapped_type>)
+            *mapper::get(target) = std::move(value.get_value_unsafe<raw_wrapped_type>());
+        else
+            mapper::get(target) = std::move(value.get_value_unsafe<raw_wrapped_type>());
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+enable_if_t<!is_wrapper<T>::value, bool> assign_wrapped_value(T& target, variant&& value)
+{
+    return false;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+enable_if_t<std::is_pointer_v<T> &&
+            is_copyable_v<std::remove_pointer_t<T>>, variant> get_pointer_value(T& value)
+{
+    return variant(*value);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+enable_if_t<!std::is_pointer_v<T> ||
+            !is_copyable_v<std::remove_pointer_t<T>>, variant> get_pointer_value(T& value)
 {
     return variant();
 }
@@ -224,7 +279,7 @@ struct variant_data_base_policy
             }
             case variant_policy_operation::EXTRACT_WRAPPED_VALUE:
             {
-                arg.get_value<variant>() = get_wrapped_value(Tp::get_value(src_data));
+                arg.get_value<variant>() = get_wrapped_value_unsafe(Tp::get_value(src_data));
                 break;
             }
             case variant_policy_operation::CREATE_WRAPPED_VALUE:
@@ -234,6 +289,15 @@ struct variant_data_base_policy
                 const type& wrapper_type    = std::get<1>(params);
 
                 wrapper_type.create_wrapped_value(Tp::get_value(src_data), var);
+                break;
+            }
+            case variant_policy_operation::ASSIGN_WRAPPED_VALUE:
+            {
+                return assign_wrapped_value(Tp::get_value(src_data), std::move(arg.get_value<variant&>()));
+            }
+            case variant_policy_operation::EXTRACT_POINTER_VALUE:
+            {
+                arg.get_value<variant>() = get_pointer_value(Tp::get_value(src_data));
                 break;
             }
             case variant_policy_operation::GET_VALUE:
@@ -267,8 +331,9 @@ struct variant_data_base_policy
 
                 data.m_type                         = type::get< raw_addressof_return_type_t<T> >();
                 data.m_wrapped_type                 = type::get< wrapper_address_return_type_t<T> >();
-                data.m_data_address                 = as_void_ptr(raw_addressof(Tp::get_value(src_data)));
-                data.m_data_address_wrapped_type    = as_void_ptr(wrapped_raw_addressof(Tp::get_value(src_data)));
+                data.m_data_address                 = as_const_void_ptr(raw_addressof(Tp::get_value(src_data)));
+                data.m_data_address_wrapped_type    = as_const_void_ptr(wrapped_raw_addressof(Tp::get_value(src_data)));
+                data.m_const                        = std::is_const_v<std::remove_reference_t<wrapper_mapper_t<T>>>;
                 break;
             }
             case variant_policy_operation::IS_ASSOCIATIVE_CONTAINER:
@@ -434,7 +499,7 @@ struct variant_data_policy_big : variant_data_base_policy<T, variant_data_policy
     {
         delete &value;
     }
-RTTR_BEGIN_DISABLE_INIT_LIST_WARNING
+
     static RTTR_INLINE void clone(const T& value, variant_data& dest)
     {
         reinterpret_cast<T*&>(dest) = new T(value);
@@ -450,7 +515,6 @@ RTTR_BEGIN_DISABLE_INIT_LIST_WARNING
     {
         reinterpret_cast<T*&>(dest) = new T(std::forward<U>(value));
     }
-RTTR_END_DISABLE_INIT_LIST_WARNING
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -502,7 +566,8 @@ struct variant_data_policy_array_small : variant_data_base_policy<T, variant_dat
 template<typename T>
 struct variant_data_policy_array_big : variant_data_base_policy<T, variant_data_policy_array_big<T>>
 {
-    using array_dest_type = decltype(new T);
+    using array_value_type = std::remove_pointer_t<std::decay_t<T>>;
+    using array_dest_type = std::decay_t<T>;
 
     static RTTR_INLINE const T& get_value(const variant_data& data)
     {
@@ -516,7 +581,7 @@ struct variant_data_policy_array_big : variant_data_base_policy<T, variant_data_
 
     static RTTR_INLINE void clone(const T& value, variant_data& dest)
     {
-        reinterpret_cast<array_dest_type&>(dest) = new T;
+        reinterpret_cast<array_dest_type&>(dest) = new array_value_type[array_size(value)];
 
         COPY_ARRAY_PRE_PROC(value, dest);
     }
@@ -529,11 +594,14 @@ struct variant_data_policy_array_big : variant_data_base_policy<T, variant_data_
     template<typename U>
     static RTTR_INLINE void create(U&& value, variant_data& dest)
     {
-        using array_dest_type = decltype(new T);
-        reinterpret_cast<array_dest_type&>(dest) = new T;
+        reinterpret_cast<array_dest_type&>(dest) = new array_value_type[array_size(value)];
 
         COPY_ARRAY_PRE_PROC(value, dest);
     }
+
+private:
+    template<class U, size_t S>
+    static constexpr std::size_t array_size(const U (&)[S]) { return S; }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -612,8 +680,13 @@ struct RTTR_API variant_data_policy_empty
             case variant_policy_operation::SWAP:
             case variant_policy_operation::EXTRACT_WRAPPED_VALUE:
             case variant_policy_operation::CREATE_WRAPPED_VALUE:
+            case variant_policy_operation::EXTRACT_POINTER_VALUE:
             {
                 break;
+            }
+            case variant_policy_operation::ASSIGN_WRAPPED_VALUE:
+            {
+                return false;
             }
             case variant_policy_operation::GET_VALUE:
             {
@@ -719,8 +792,13 @@ struct RTTR_API variant_data_policy_void
             case variant_policy_operation::CLONE:
             case variant_policy_operation::SWAP:
             case variant_policy_operation::EXTRACT_WRAPPED_VALUE:
+            case variant_policy_operation::EXTRACT_POINTER_VALUE:
             {
                 break;
+            }
+            case variant_policy_operation::ASSIGN_WRAPPED_VALUE:
+            {
+                return false;
             }
             case variant_policy_operation::GET_VALUE:
             {
@@ -872,6 +950,14 @@ struct RTTR_API variant_data_policy_nullptr_t
             {
                 break;
             }
+            case variant_policy_operation::ASSIGN_WRAPPED_VALUE:
+            {
+                return false;
+            }
+            case variant_policy_operation::EXTRACT_POINTER_VALUE:
+            {
+                break;
+            }
             case variant_policy_operation::GET_VALUE:
             {
                 arg.get_value<const void*>() = &get_value(src_data);
@@ -902,8 +988,8 @@ struct RTTR_API variant_data_policy_nullptr_t
 
                 data.m_type                         = type::get<std::nullptr_t>();
                 data.m_wrapped_type                 = type::get<std::nullptr_t>();
-                data.m_data_address                 = as_void_ptr(raw_addressof(get_value(src_data)));
-                data.m_data_address_wrapped_type    = as_void_ptr(wrapped_raw_addressof(get_value(src_data)));
+                data.m_data_address                 = as_const_void_ptr(raw_addressof(get_value(src_data)));
+                data.m_data_address_wrapped_type    = as_const_void_ptr(wrapped_raw_addressof(get_value(src_data)));
                 break;
             }
             case variant_policy_operation::IS_ASSOCIATIVE_CONTAINER:

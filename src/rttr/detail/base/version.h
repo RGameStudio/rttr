@@ -25,79 +25,13 @@
 *                                                                                   *
 *************************************************************************************/
 
-#include "rttr/detail/enumeration/enumeration_helper.h"
-#include "rttr/enumeration.h"
-#include "rttr/argument.h"
+#ifndef RTTR_VERSION_H_
+#define RTTR_VERSION_H_
 
-namespace rttr
-{
-namespace detail
-{
+#define RTTR_VERSION_MAJOR 0
+#define RTTR_VERSION_MINOR 9
+#define RTTR_VERSION_PATCH 7
+#define RTTR_VERSION       907
+#define RTTR_VERSION_STR   "0.9.7"
 
-/////////////////////////////////////////////////////////////////////////////////////////
-
-std::string_view get_enumeration_name(const argument& arg)
-{
-    return arg.get_type().get_enumeration().value_to_name(arg);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-bool to_enumeration(std::string_view from, argument& to)
-{
-    auto& var_ref = to.get_value<std::reference_wrapper<variant>>();
-    variant& var = var_ref.get();
-    const type enum_type = var.get_value_unsafe<type>();
-    if (variant var_tmp = enum_type.get_enumeration().name_to_value(from))
-    {
-        var = var_tmp;
-        return var.is_valid();
-    }
-    else
-    {
-        return false;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-bool to_enumeration(const variant& from, argument& to)
-{
-    auto& var_ref = to.get_value<std::reference_wrapper<variant>>();
-    variant& var = var_ref.get();
-    const type enum_type = var.get_value_unsafe<type>();
-    const enumeration e = enum_type.get_enumeration();
-    const type underlying_enum_type = e.get_underlying_type();
-    for (const auto& value : e.get_values())
-    {
-        variant var_cpy = value;
-        const bool ret = var_cpy.convert(underlying_enum_type);
-        if (ret && var_cpy == from)
-        {
-            var = value;
-            return var.is_valid();
-        }
-    }
-
-    return false;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-bool is_variant_with_enum(const argument& arg)
-{
-    if (arg.is_type<std::reference_wrapper<variant>>())
-    {
-        const auto& var = arg.get_value<std::reference_wrapper<variant>>().get();
-        return (var.is_type<type>() && var.get_value_unsafe<type>().is_enumeration());
-    }
-    else
-    {
-        return false;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-} // end namespace detail
-} // end namespace rttr
+#endif // RTTR_VERSION_H_

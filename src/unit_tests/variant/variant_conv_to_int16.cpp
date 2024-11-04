@@ -58,7 +58,7 @@ TEST_CASE("variant::to_int16() - from bool", "[variant]")
     CHECK(var.convert<int16_t>(&ok) == 1);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<int16_t>()) == true);
-    CHECK(var.get_value<int16_t>() == 1);
+    CHECK(var.get_value_unsafe<int16_t>() == 1);
 
     // false case
     var = false;
@@ -68,7 +68,7 @@ TEST_CASE("variant::to_int16() - from bool", "[variant]")
     CHECK(var.convert<int16_t>(&ok) == 0);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<int16_t>()) == true);
-    CHECK(var.get_value<int16_t>() == 0);
+    CHECK(var.get_value_unsafe<int16_t>() == 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ TEST_CASE("variant::to_int16() - from char", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == 65);
+        CHECK(var.get_value_unsafe<int16_t>() == 65);
     }
 
 RTTR_BEGIN_DISABLE_CONDITIONAL_EXPR_WARNING
@@ -118,7 +118,7 @@ TEST_CASE("variant::to_int16() - from std::string", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == 32760);
+        CHECK(var.get_value_unsafe<int16_t>() == 32760);
     }
 
     SECTION("valid conversion negative")
@@ -166,6 +166,65 @@ TEST_CASE("variant::to_int16() - from std::string", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant::to_int16() - from std::string_view", "[variant]")
+{
+    SECTION("valid conversion positive")
+    {
+        variant var = std::string_view("32760");
+        REQUIRE(var.can_convert<int16_t>() == true);
+        bool ok = false;
+        CHECK(var.to_int16(&ok) == 32760);
+        CHECK(ok == true);
+
+        REQUIRE(var.convert(type::get<int16_t>()) == true);
+        CHECK(var.get_value_unsafe<int16_t>() == 32760);
+    }
+
+    SECTION("valid conversion negative")
+    {
+        variant var = std::string_view("-32760");
+        bool ok = false;
+        CHECK(var.to_int16(&ok) == -32760);
+        CHECK(ok == true);
+        CHECK(var.convert(type::get<int16_t>()) == true);
+    }
+
+    SECTION("too big")
+    {
+        variant var = std::string_view("42767");
+        bool ok = false;
+        CHECK(var.to_int16(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int16_t>()) == false);
+    }
+
+    SECTION("too small")
+    {
+        variant var = std::string_view("-42767");
+        bool ok = false;
+        CHECK(var.to_int16(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int16_t>()) == false);
+    }
+
+    SECTION("invalid conversion")
+    {
+        variant var = std::string_view("text 34 and text");
+        bool ok = false;
+        CHECK(var.to_int16(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int16_t>()) == false);
+
+        var = std::string_view("34 and text");
+        ok = false;
+        CHECK(var.to_int16(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int16_t>()) == false);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant::to_int16() - from int", "[variant]")
 {
     SECTION("valid conversion positive")
@@ -177,7 +236,7 @@ TEST_CASE("variant::to_int16() - from int", "[variant]")
 
         CHECK(ok == true);
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == 32760);
+        CHECK(var.get_value_unsafe<int16_t>() == 32760);
     }
 
     SECTION("valid conversion negative")
@@ -221,7 +280,7 @@ TEST_CASE("variant::to_int16() - from float", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == 32760);
+        CHECK(var.get_value_unsafe<int16_t>() == 32760);
     }
 
     SECTION("valid conversion negative")
@@ -265,7 +324,7 @@ TEST_CASE("variant::to_int16() - from double", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == 32760);
+        CHECK(var.get_value_unsafe<int16_t>() == 32760);
     }
 
     SECTION("valid conversion negative")
@@ -309,7 +368,7 @@ TEST_CASE("variant::to_int16() - from int8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(50));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(50));
     }
 
     SECTION("valid conversion negative")
@@ -335,7 +394,7 @@ TEST_CASE("variant::to_int16() - from int16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(32760));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(32760));
     }
 
     SECTION("valid conversion negative")
@@ -361,7 +420,7 @@ TEST_CASE("variant::to_int16() - from int32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(32760));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(32760));
     }
 
     SECTION("valid conversion negative")
@@ -405,7 +464,7 @@ TEST_CASE("variant::to_int16() - from int64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(32760));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(32760));
     }
 
     SECTION("valid conversion negative")
@@ -449,7 +508,7 @@ TEST_CASE("variant::to_int16() - from uint8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(50));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(50));
     }
 }
 
@@ -466,7 +525,7 @@ TEST_CASE("variant::to_int16() - from uint16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(32760));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(32760));
     }
 
     SECTION("too big")
@@ -476,7 +535,7 @@ TEST_CASE("variant::to_int16() - from uint16_t", "[variant]")
         CHECK(var.to_int16(&ok) == 0);
         CHECK(ok == false);
         REQUIRE(var.convert(type::get<int16_t>()) == false);
-        CHECK(var.get_value<uint16_t>() == uint16_t(65530));
+        CHECK(var.get_value_unsafe<uint16_t>() == uint16_t(65530));
     }
 }
 
@@ -493,7 +552,7 @@ TEST_CASE("variant::to_int16() - from uint32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(32760));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(32760));
     }
 
     SECTION("too big")
@@ -503,7 +562,7 @@ TEST_CASE("variant::to_int16() - from uint32_t", "[variant]")
         CHECK(var.to_int16(&ok) == 0);
         CHECK(ok == false);
         REQUIRE(var.convert(type::get<int16_t>()) == false);
-        CHECK(var.get_value<uint32_t>() == uint32_t(65530));
+        CHECK(var.get_value_unsafe<uint32_t>() == uint32_t(65530));
     }
 }
 
@@ -520,7 +579,7 @@ TEST_CASE("variant::to_int16() - from uint64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == int16_t(32760));
+        CHECK(var.get_value_unsafe<int16_t>() == int16_t(32760));
     }
 
     SECTION("too big")
@@ -530,7 +589,7 @@ TEST_CASE("variant::to_int16() - from uint64_t", "[variant]")
         CHECK(var.to_int16(&ok) == 0);
         CHECK(ok == false);
         REQUIRE(var.convert(type::get<int16_t>()) == false);
-        CHECK(var.get_value<uint64_t>() == uint64_t(65530));
+        CHECK(var.get_value_unsafe<uint64_t>() == uint64_t(65530));
     }
 }
 
@@ -547,7 +606,7 @@ TEST_CASE("variant::to_int16() - from enum", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int16_t>()) == true);
-        CHECK(var.get_value<int16_t>() == 32760);
+        CHECK(var.get_value_unsafe<int16_t>() == 32760);
     }
 
     SECTION("valid conversion negative")

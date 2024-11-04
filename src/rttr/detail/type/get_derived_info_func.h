@@ -59,7 +59,7 @@ static derived_info get_most_derived_info_impl_none(void* ptr)
 using derived_func = derived_info(*)(void*);
 
 /*!
- * This is the case where the type T has put necessary macro `RTTR_ENABLE` inside the class.
+ * This is the case where the type T has put necessary macro `RTTR_DECLARE_ANCESTORS` inside the class.
  */
 
 template<typename T>
@@ -69,7 +69,7 @@ static derived_func get_most_derived_info_check(typename std::enable_if<has_get_
 }
 
 /*!
- * This is the case where the typ T has not put necessary macro `RTTR_ENABLE` inside the class.
+ * This is the case where the typ T has not put necessary macro `RTTR_DECLARE_ANCESTORS` inside the class.
  */
 template<typename T>
 static derived_func get_most_derived_info_check(typename std::enable_if<!has_get_derived_info_func<T>::value >::type* = 0)

@@ -35,7 +35,7 @@
 
 namespace rttr
 {
-class type;
+struct template_argument_data;
 
 namespace detail
 {
@@ -43,7 +43,7 @@ namespace detail
 template<typename T>
 struct template_type_trait : std::false_type                                                                                                   \
 {
-    static std::vector<::rttr::type> get_template_arguments();
+    static std::vector<::rttr::template_argument_data> get_template_arguments();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

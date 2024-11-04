@@ -40,8 +40,8 @@ struct property_order_test_base
 
     std::string _whoami ;
 
-    RTTR_ENABLE()
-
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct property_order_test_derived : property_order_test_base
@@ -54,7 +54,8 @@ struct property_order_test_derived : property_order_test_base
     // member with SAME name as base
     std::string _whoami ;
 
-    RTTR_ENABLE(property_order_test_base)
+    RTTR_DECLARE_ANCESTORS(property_order_test_base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +74,7 @@ RTTR_REGISTRATION
 // and gets the value from the property
 std::string rttr_prop_approach1(
         const rttr::instance& vinst,
-        const rttr::string_view& prop_name )
+        const std::string_view& prop_name )
 {
     const auto& inst_t = vinst.get_type();
 
@@ -84,24 +85,24 @@ std::string rttr_prop_approach1(
     // get value from property
     const auto& iam_var = prop.get_value(vinst);
     REQUIRE(iam_var.is_valid() == true);
-    REQUIRE(iam_var.is_type<std::string>() == true) ;
+    REQUIRE(iam_var.is_type<std::reference_wrapper<std::string>>() == true) ;
 
-    return iam_var.get_value<std::string>();
+    return iam_var.get_value_unsafe<std::reference_wrapper<std::string>>();
 }
 
 // approach 2 gets the property value from rttr::type
 std::string rttr_prop_approach2(
         const rttr::instance& vinst,
-        const rttr::string_view& prop_name )
+        const std::string_view& prop_name )
 {
     const auto& inst_t = vinst.get_type();
 
     // get_value via type
     const auto& iam_var = inst_t.get_property_value(prop_name, vinst);
     REQUIRE(iam_var.is_valid() == true);
-    REQUIRE(iam_var.is_type<std::string>() == true) ;
+    REQUIRE(iam_var.is_type<std::reference_wrapper<std::string>>() == true) ;
 
-    return iam_var.get_value<std::string>();
+    return iam_var.get_value_unsafe<std::reference_wrapper<std::string>>();
 }
 
 template<class TT>

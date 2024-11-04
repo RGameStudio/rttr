@@ -28,6 +28,7 @@
 #include "rttr/property.h"
 
 #include "rttr/detail/property/property_wrapper_base.h"
+#include "rttr/hash_string_constexpr.h"
 #include "rttr/variant.h"
 #include "rttr/argument.h"
 #include "rttr/instance.h"
@@ -50,7 +51,7 @@ property create_item(const property_wrapper_base* wrapper)
 template<>
 property create_invalid_item()
 {
-    static const detail::property_wrapper_base invalid_wrapper(string_view(), detail::get_invalid_type());
+    static const detail::property_wrapper_base invalid_wrapper(std::string_view(), detail::get_invalid_type());
     return property(&invalid_wrapper);
 }
 
@@ -114,7 +115,7 @@ enumeration property::get_enumeration() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-string_view property::get_name() const RTTR_NOEXCEPT
+std::string_view property::get_name() const RTTR_NOEXCEPT
 {
     return m_wrapper->get_name();
 }
@@ -137,7 +138,14 @@ type property::get_declaring_type() const RTTR_NOEXCEPT
 
 bool property::set_value(instance object, argument arg) const
 {
-    return m_wrapper->set_value(object, arg);
+    return m_wrapper->set_value_copy(object, arg);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool property::set_value_move(instance object, argument arg) const
+{
+    return m_wrapper->set_value_move(object, arg);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +157,7 @@ variant property::get_value(instance object) const
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant property::get_metadata(const variant& key) const
+const variant& property::get_metadata(uint64_t key) const
 {
     return m_wrapper->get_metadata(key);
 }

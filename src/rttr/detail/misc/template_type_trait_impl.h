@@ -29,6 +29,7 @@
 #define RTTR_TEMPLATE_TYPE_TRAIT_IMPL_H_
 
 #include "rttr/type.h"
+#include "rttr/template_argument_data.h"
 
 namespace rttr
 {
@@ -36,12 +37,15 @@ namespace detail
 {
 
 template<typename T>
-std::vector<::rttr::type> template_type_trait<T>::get_template_arguments() { return {}; }
+std::vector<::rttr::template_argument_data> template_type_trait<T>::get_template_arguments() { return {}; }
 
 template<template <typename... > class T, typename...Args>
 struct template_type_trait<T<Args...>> : std::true_type
 {
-    static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<Args>()..., }; }
+    static std::vector<::rttr::template_argument_data> get_template_arguments()
+    {
+        return { ::rttr::template_argument_data{::rttr::type::get<Args>(), true}..., };
+    }
 };
 
 } // end namespace detail
@@ -56,7 +60,10 @@ namespace detail                                                                
     template<template <value_type...> class T, value_type...Args>                                                                           \
     struct template_type_trait<T<Args...>> : std::true_type                                                                                 \
     {                                                                                                                                       \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<Args>()..., }; }                             \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                         \
+        {                                                                                                                                   \
+            return { ::rttr::template_argument_data{::rttr::type::get<Args>(), false}..., };                                                \
+        }                                                                                                                                   \
     };                                                                                                                                      \
 }                                                                                                                                           \
 }
@@ -69,13 +76,24 @@ namespace detail                                                                
     template<template <typename, value_type > class T, typename T1, value_type N1>                                                          \
     struct template_type_trait<T<T1, N1>> : std::true_type                                                                                  \
     {                                                                                                                                       \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<T1>(), ::rttr::type::get<value_type>() }; }  \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                         \
+        {                                                                                                                                   \
+            return {                                                                                                                        \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true},                                                              \
+                ::rttr::template_argument_data{::rttr::type::get<value_type>(), false}                                                      \
+            };                                                                                                                              \
+        }                                                                                                                                   \
     };                                                                                                                                      \
                                                                                                                                             \
     template<template <value_type, typename > class T, typename T1, value_type N1>                                                          \
     struct template_type_trait<T<N1, T1>> : std::true_type                                                                                  \
     {                                                                                                                                       \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<value_type>(), ::rttr::type::get<T1>() }; }  \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                         \
+        {                                                                                                                                   \
+            return {                                                                                                                        \
+                ::rttr::template_argument_data{::rttr::type::get<value_type>(), false},                                                     \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true} };                                                            \
+        }                                                                                                                                   \
     };                                                                                                                                      \
 }                                                                                                                                           \
 }
@@ -88,19 +106,40 @@ namespace detail                                                                
     template<template <typename, typename, value_type > class T, typename T1, typename T2, value_type N1>                                                       \
     struct template_type_trait<T<T1, T2, N1>> : std::true_type                                                                                                  \
     {                                                                                                                                                           \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<T1>(), ::rttr::type::get<T2>(), ::rttr::type::get<N1>() }; }     \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                                             \
+        {                                                                                                                                                       \
+            return {                                                                                                                                            \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true},                                                                                  \
+                ::rttr::template_argument_data{::rttr::type::get<T2>(), true},                                                                                  \
+                ::rttr::template_argument_data{::rttr::type::get<N1>(), false}                                                                                  \
+            };                                                                                                                                                  \
+        }                                                                                                                                                       \
     };                                                                                                                                                          \
                                                                                                                                                                 \
     template<template <typename, value_type, typename > class T, typename T1, typename T2, value_type N1>                                                       \
     struct template_type_trait<T<T1, N1, T2>> : std::true_type                                                                                                  \
     {                                                                                                                                                           \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<T1>(), ::rttr::type::get<N1>(), ::rttr::type::get<T2>() }; }     \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                                             \
+        {                                                                                                                                                       \
+            return {                                                                                                                                            \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true},                                                                                  \
+                ::rttr::template_argument_data{::rttr::type::get<N1>(), false},                                                                                 \
+                ::rttr::template_argument_data{::rttr::type::get<T2>(), true}                                                                                   \
+            };                                                                                                                                                  \
+        }                                                                                                                                                       \
     };                                                                                                                                                          \
                                                                                                                                                                 \
     template<template <value_type, typename, typename > class T, typename T1, typename T2, value_type N1>                                                       \
     struct template_type_trait<T<N1, T1, T2>> : std::true_type                                                                                                  \
     {                                                                                                                                                           \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<N1>(), ::rttr::type::get<T1>(), ::rttr::type::get<T2>() }; }     \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                                             \
+        {                                                                                                                                                       \
+            return {                                                                                                                                            \
+                ::rttr::template_argument_data{::rttr::type::get<N1>(), false},                                                                                 \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true},                                                                                  \
+                ::rttr::template_argument_data{::rttr::type::get<T2>(), true}                                                                                   \
+            };                                                                                                                                                  \
+        }                                                                                                                                                       \
     };                                                                                                                                                          \
                                                                                                                                                                 \
                                                                                                                                                                 \
@@ -108,19 +147,40 @@ namespace detail                                                                
     template<template <value_type, value_type, typename > class T, typename T1, value_type N1, value_type N2>                                                   \
     struct template_type_trait<T<N1, N2, T1>> : std::true_type                                                                                                  \
     {                                                                                                                                                           \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<N1>(), ::rttr::type::get<N2>(), ::rttr::type::get<T1>() }; }     \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                                             \
+        {                                                                                                                                                       \
+            return {                                                                                                                                            \
+                ::rttr::template_argument_data{::rttr::type::get<N1>(), false},                                                                                 \
+                ::rttr::template_argument_data{::rttr::type::get<N2>(), false},                                                                                 \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true}                                                                                   \
+            };                                                                                                                                                  \
+        }                                                                                                                                                       \
     };                                                                                                                                                          \
                                                                                                                                                                 \
     template<template <value_type, typename, value_type > class T, typename T1, value_type N1, value_type N2>                                                   \
     struct template_type_trait<T<N1, T1, N2>> : std::true_type                                                                                                  \
     {                                                                                                                                                           \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<N1>(), ::rttr::type::get<T1>(), ::rttr::type::get<N2>() }; }     \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                                             \
+        {                                                                                                                                                       \
+            return {                                                                                                                                            \
+                ::rttr::template_argument_data{::rttr::type::get<N1>(), false},                                                                                 \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true},                                                                                  \
+                ::rttr::template_argument_data{::rttr::type::get<N2>(), false}                                                                                  \
+            };                                                                                                                                                  \
+        }                                                                                                                                                       \
     };                                                                                                                                                          \
                                                                                                                                                                 \
     template<template <typename, value_type, value_type > class T, typename T1, value_type N1, value_type N2>                                                   \
     struct template_type_trait<T<T1, N1, N2>> : std::true_type                                                                                                  \
     {                                                                                                                                                           \
-        static std::vector<::rttr::type> get_template_arguments() { return { ::rttr::type::get<T1>(), ::rttr::type::get<N1>(), ::rttr::type::get<N2>() }; }     \
+        static std::vector<::rttr::template_argument_data> get_template_arguments()                                                                             \
+        {                                                                                                                                                       \
+            return {                                                                                                                                            \
+                ::rttr::template_argument_data{::rttr::type::get<T1>(), true},                                                                                  \
+                ::rttr::template_argument_data{::rttr::type::get<N1>(), false},                                                                                 \
+                ::rttr::template_argument_data{::rttr::type::get<N2>(), false}                                                                                  \
+            };                                                                                                                                                  \
+        }                                                                                                                                                       \
     };                                                                                                                                                          \
                                                                                                                                                                 \
 }                                                                                                                                                               \

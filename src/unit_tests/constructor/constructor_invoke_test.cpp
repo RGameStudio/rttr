@@ -175,7 +175,7 @@ TEST_CASE("constructor - invoke general", "[constructor]")
         variant var = ctor.invoke();
         CHECK(var.is_valid() == true);
         CHECK(var.get_type() == type::get<ctor_invoke_test*>());
-        ctor_invoke_test* obj = var.get_value<ctor_invoke_test*>();
+        ctor_invoke_test* obj = var.get_value_unsafe<ctor_invoke_test*>();
         CHECK(obj->default_ctor_invoked == true);
         CHECK(t.get_destructor().invoke(var) == true);
     }
@@ -192,7 +192,7 @@ TEST_CASE("constructor - invoke general", "[constructor]")
         var = ctor.invoke(obj_default);
         CHECK(var.get_type() == type::get<ctor_invoke_test*>());
 
-        ctor_invoke_test* obj = var.get_value<ctor_invoke_test*>();
+        ctor_invoke_test* obj = var.get_value_unsafe<ctor_invoke_test*>();
         CHECK(obj->cpy_ctor_invoked == true);
         CHECK(t.get_destructor().invoke(var) == true);
     }
@@ -207,7 +207,7 @@ TEST_CASE("constructor - invoke general", "[constructor]")
 
         var = ctor.invoke(23, 42.0);
         CHECK(var.is_valid() == true);
-        ctor_invoke_test* obj = var.get_value<ctor_invoke_test*>();
+        ctor_invoke_test* obj = var.get_value_unsafe<ctor_invoke_test*>();
         CHECK(obj->custom_ctor_invoked == true);
         CHECK(obj->value_1 == 23);
         CHECK(obj->value_2 == 42);
@@ -233,7 +233,7 @@ TEST_CASE("constructor - invoke policy", "[constructor]")
         var = ctor_list[8].invoke(23, 42.0);
         CHECK(var.is_valid() == true);
         CHECK(var.get_type() == type::get<ctor_invoke_test>());
-        const ctor_invoke_test& obj = var.get_value<ctor_invoke_test>();
+        const ctor_invoke_test& obj = var.get_value_unsafe<ctor_invoke_test>();
         CHECK(obj.value_1 == 23);
         CHECK(obj.value_2 == 42);
 
@@ -253,7 +253,7 @@ TEST_CASE("constructor - invoke policy", "[constructor]")
         var = ctor_list[9].invoke(23, 42.0);
         CHECK(var.is_valid() == true);
         CHECK(var.get_type() == type::get<ctor_invoke_test*>());
-        ctor_invoke_test* obj = var.get_value<ctor_invoke_test*>();
+        ctor_invoke_test* obj = var.get_value_unsafe<ctor_invoke_test*>();
         CHECK(obj->value_1 == 23);
         CHECK(obj->value_2 == 42);
 
@@ -274,7 +274,7 @@ TEST_CASE("constructor - invoke policy", "[constructor]")
         var = ctor_list[10].invoke(23, 42.0);
         CHECK(var.is_valid() == true);
         CHECK(var.get_type() == type::get<std::shared_ptr<ctor_invoke_test>>());
-        const std::shared_ptr<ctor_invoke_test>& obj = var.get_value<std::shared_ptr<ctor_invoke_test>>();
+        const std::shared_ptr<ctor_invoke_test>& obj = var.get_value_unsafe<std::shared_ptr<ctor_invoke_test>>();
         CHECK(obj->value_1 == 23);
         CHECK(obj->value_2 == 42);
 
@@ -302,7 +302,7 @@ TEST_CASE("constructor - invoke variadic", "[constructor]")
     const int value = 23;
     var = ctor.invoke_variadic({1, 2, 3, 4, 5, 6, &value});
     CHECK(var.is_valid() == true);
-    ctor_invoke_test* obj = var.get_value<ctor_invoke_test*>();
+    ctor_invoke_test* obj = var.get_value_unsafe<ctor_invoke_test*>();
     CHECK(obj->value_1 == 1);
     CHECK(obj->value_2 == 2);
     CHECK(t.get_destructor().invoke(var) == true);

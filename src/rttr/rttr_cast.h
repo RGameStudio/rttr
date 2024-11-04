@@ -37,7 +37,7 @@ namespace rttr
  * When the given the given \p object is an instance of type \p Target_Type, then this function will cast the pointer to the \p TargetType;
  * otherwise it will return a `nullptr`. If \p object is already a `nullptr` then it will also return a `nullptr`.
  *
- * \remark Both class types must contain the macro \ref RTTR_ENABLE in the class declaration.
+ * \remark Both class types must contain the macro \ref RTTR_ENABLE_OBJECT_INFO or \ref RTTR_ENABLE_OBJECT_INFO_AS in the class declaration.
  *        \p Source_Type and \p Target_Type must be both pointer types.
  *
  *

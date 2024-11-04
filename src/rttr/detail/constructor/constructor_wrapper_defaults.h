@@ -54,24 +54,24 @@ namespace detail
 {
 
 template<typename Class_Type, typename Constructor_Type, access_levels Acc_Level, typename Policy,
-         std::size_t Metadata_Count, typename Default_Args, typename Parameter_Infos, typename Visitor_List, typename... Args>
+         typename Default_Args, typename Parameter_Infos, typename Visitor_List, typename... Args>
 class constructor_wrapper;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename Class_Type, access_levels Acc_Level, typename Policy, std::size_t Metadata_Count, typename Visitor_List, typename... Def_Args, typename...Param_Args, typename... Ctor_Args>
-class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, Metadata_Count, default_args<Def_Args...>, parameter_infos<Param_Args...>, Visitor_List, Ctor_Args...>
-:   public constructor_wrapper_base, public metadata_handler<Metadata_Count>
+template<typename Class_Type, access_levels Acc_Level, typename Policy, typename Visitor_List, typename... Def_Args, typename...Param_Args, typename... Ctor_Args>
+class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, default_args<Def_Args...>, parameter_infos<Param_Args...>, Visitor_List, Ctor_Args...>
+:   public constructor_wrapper_base, public metadata_handler
 {
         using invoker_class = constructor_invoker<ctor_type, Policy, type_list<Class_Type, Ctor_Args...>, index_sequence_for<Ctor_Args...>>;
         using instanciated_type = typename invoker_class::return_type;
         using invoke_with_defaults = invoke_defaults_helper<invoker_class, type_list<Ctor_Args...>>;
 
     public:
-        constructor_wrapper(std::array<metadata, Metadata_Count> metadata_list,
+        constructor_wrapper(std::vector<metadata>&& metadata_list,
                             default_args<Def_Args...> default_args,
                             parameter_infos<Param_Args...> param_infos) RTTR_NOEXCEPT
-        :   metadata_handler<Metadata_Count>(std::move(metadata_list)),
+        :   metadata_handler(std::move(metadata_list)),
             m_def_args(std::move(default_args)), m_param_infos(std::move(param_infos)),
             m_param_info_list(create_paramter_info_array(m_param_infos))
         {
@@ -95,7 +95,7 @@ class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, Metadata_Co
 
         array_range<parameter_info> get_parameter_infos() const RTTR_NOEXCEPT { return array_range<parameter_info>(m_param_info_list.data(),
                                                                                                                    m_param_info_list.size()); }
-        variant get_metadata(const variant& key) const { return metadata_handler<Metadata_Count>::get_metadata(key); }
+        const variant& get_metadata(uint64_t key) const { return metadata_handler::get_metadata(key); }
 
         variant invoke() const
         {
@@ -150,10 +150,10 @@ class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, Metadata_Co
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename Class_Type, access_levels Acc_Level, typename Policy,
-         std::size_t Metadata_Count, typename... Def_Args, typename...Param_Args, typename Visitor_List, typename F>
+         typename... Def_Args, typename...Param_Args, typename Visitor_List, typename F>
 class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
-                          Metadata_Count, default_args<Def_Args...>, parameter_infos<Param_Args...>, Visitor_List, F>
-:   public constructor_wrapper_base, public metadata_handler<Metadata_Count>
+                          default_args<Def_Args...>, parameter_infos<Param_Args...>, Visitor_List, F>
+:   public constructor_wrapper_base, public metadata_handler
 {
     using instanciated_type = typename function_traits<F>::return_type;
     using method_type = typename detail::method_type<F>::type;
@@ -163,10 +163,10 @@ class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
 
     public:
         constructor_wrapper(F creator_func,
-                            std::array<metadata, Metadata_Count> metadata_list,
+                            std::vector<metadata>&& metadata_list,
                             default_args<Def_Args...> default_args,
                             parameter_infos<Param_Args...> param_infos) RTTR_NOEXCEPT
-        :   metadata_handler<Metadata_Count>(std::move(metadata_list)),
+        :   metadata_handler(std::move(metadata_list)),
             m_creator_func(creator_func),
             m_def_args(std::move(default_args)), m_param_infos(std::move(param_infos)),
             m_param_info_list(create_paramter_info_array(m_param_infos))
@@ -183,7 +183,7 @@ class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
         std::vector<bool> get_is_const()                    const RTTR_NOEXCEPT { return method_accessor<F, Policy>::get_is_const();          }
         array_range<parameter_info> get_parameter_infos()   const RTTR_NOEXCEPT { return array_range<parameter_info>(m_param_info_list.data(),
                                                                                                        m_param_info_list.size()); }
-        variant get_metadata(const variant& key)            const RTTR_NOEXCEPT { return metadata_handler<Metadata_Count>::get_metadata(key); }
+        const variant& get_metadata(uint64_t key)            const RTTR_NOEXCEPT { return metadata_handler::get_metadata(key); }
 
         variant invoke() const
         {
@@ -238,19 +238,19 @@ class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename Class_Type, access_levels Acc_Level, typename Policy, std::size_t Metadata_Count, typename Visitor_List, typename... Def_Args, typename... Ctor_Args>
-class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, Metadata_Count, default_args<Def_Args...>, parameter_infos<>, Visitor_List, Ctor_Args...>
-:   public constructor_wrapper_base, public metadata_handler<Metadata_Count>
+template<typename Class_Type, access_levels Acc_Level, typename Policy, typename Visitor_List, typename... Def_Args, typename... Ctor_Args>
+class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, default_args<Def_Args...>, parameter_infos<>, Visitor_List, Ctor_Args...>
+:   public constructor_wrapper_base, public metadata_handler
 {
         using invoker_class = constructor_invoker<ctor_type, Policy, type_list<Class_Type, Ctor_Args...>, index_sequence_for<Ctor_Args...>>;
         using instanciated_type = typename invoker_class::return_type;
         using invoke_with_defaults = invoke_defaults_helper<invoker_class, type_list<Ctor_Args...>>;
 
     public:
-        constructor_wrapper(std::array<metadata, Metadata_Count> metadata_list,
+        constructor_wrapper(std::vector<metadata>&& metadata_list,
                             default_args<Def_Args...> default_args,
                             parameter_infos<> param_infos) RTTR_NOEXCEPT
-        :   metadata_handler<Metadata_Count>(std::move(metadata_list)),
+        :   metadata_handler(std::move(metadata_list)),
             m_def_args(std::move(default_args))
         {
             init();
@@ -271,7 +271,7 @@ class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, Metadata_Co
         std::vector<bool> get_is_const() const RTTR_NOEXCEPT { return get_is_const_impl(std::integral_constant<bool, sizeof...(Ctor_Args) != 0>()); }
 
         array_range<parameter_info> get_parameter_infos()   const RTTR_NOEXCEPT { return array_range<parameter_info>(); }
-        variant get_metadata(const variant& key)            const { return metadata_handler<Metadata_Count>::get_metadata(key); }
+        const variant& get_metadata(uint64_t key)            const { return metadata_handler::get_metadata(key); }
 
         variant invoke() const
         {
@@ -324,10 +324,10 @@ class constructor_wrapper<Class_Type, class_ctor, Acc_Level, Policy, Metadata_Co
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename Class_Type, access_levels Acc_Level, typename Policy,
-         std::size_t Metadata_Count, typename... Def_Args, typename Visitor_List, typename F>
+         typename... Def_Args, typename Visitor_List, typename F>
 class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
-                          Metadata_Count, default_args<Def_Args...>, parameter_infos<>, Visitor_List, F>
-:   public constructor_wrapper_base, public metadata_handler<Metadata_Count>
+                          default_args<Def_Args...>, parameter_infos<>, Visitor_List, F>
+:   public constructor_wrapper_base, public metadata_handler
 {
     using instanciated_type = typename function_traits<F>::return_type;
     using method_type = typename detail::method_type<F>::type;
@@ -337,10 +337,10 @@ class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
 
     public:
         constructor_wrapper(F creator_func,
-                            std::array<metadata, Metadata_Count> metadata_list,
+                            std::vector<metadata>&& metadata_list,
                             default_args<Def_Args...> default_args,
                             parameter_infos<> param_infos) RTTR_NOEXCEPT
-        :   metadata_handler<Metadata_Count>(std::move(metadata_list)),
+        :   metadata_handler(std::move(metadata_list)),
             m_creator_func(creator_func),
             m_def_args(std::move(default_args))
         {
@@ -354,7 +354,7 @@ class constructor_wrapper<Class_Type, return_func, Acc_Level, Policy,
         std::vector<bool> get_is_reference()                const RTTR_NOEXCEPT { return method_accessor<F, Policy>::get_is_reference();      }
         std::vector<bool> get_is_const()                    const RTTR_NOEXCEPT { return method_accessor<F, Policy>::get_is_const();          }
         array_range<parameter_info> get_parameter_infos()   const RTTR_NOEXCEPT { return array_range<parameter_info>();                       }
-        variant get_metadata(const variant& key)            const { return metadata_handler<Metadata_Count>::get_metadata(key); }
+        const variant& get_metadata(uint64_t key)            const { return metadata_handler::get_metadata(key); }
 
         variant invoke() const
         {

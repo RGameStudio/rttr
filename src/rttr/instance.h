@@ -132,9 +132,9 @@ public:
      *
      * See following example code:
      * \code{.cpp}
-     *   struct base { RTTR_ENABLE() };
-     *   struct middle : base { RTTR_ENABLE(base) };
-     *   struct derived : middle { RTTR_ENABLE(middle) };
+     *   struct base { RTTR_DECLARE_ROOT() };
+     *   struct middle : base { RTTR_DECLARE_ANCESTORS(base) };
+     *   struct derived : middle { RTTR_DECLARE_ANCESTORS(middle) };
      *   //...
      *   derived d;
      *   base& b = d;

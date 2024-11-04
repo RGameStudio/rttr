@@ -49,7 +49,7 @@ struct not_copyable_ctor
         not_copyable_ctor(const not_copyable_ctor&);
 };
 
-enum class E_MetaData
+enum E_MetaData
 {
     SCRIPTABLE  = 0,
     TOOL_TIP    = 1,
@@ -145,9 +145,9 @@ TEST_CASE("constructor - get_signature", "[constructor]")
     REQUIRE(ctor_list.size() >= 4);
 
     CHECK(ctor_list[0].get_signature() == "ctor_misc_test( )");
-    CHECK(ctor_list[3].get_signature() == "ctor_misc_test( int )");
-    CHECK(ctor_list[4].get_signature() == "ctor_misc_test( int )");
-    CHECK(ctor_list[5].get_signature() == "ctor_misc_test( int )");
+    CHECK(ctor_list[3].get_signature() == "ctor_misc_test( int32 )");
+    CHECK(ctor_list[4].get_signature() == "ctor_misc_test( int32 )");
+    CHECK(ctor_list[5].get_signature() == "ctor_misc_test( int32 )");
 
     //negative test
     CHECK(type::get_by_name("").get_constructor().get_signature() == "");
@@ -202,11 +202,11 @@ TEST_CASE("constructor - get_metadata", "[constructor]")
         constructor ctor = type::get<ctor_misc_test>().get_constructor();
         variant value = ctor.get_metadata(E_MetaData::SCRIPTABLE);
         REQUIRE(value.is_type<bool>() == true);
-        CHECK(value.get_value<bool>() == true);
+        CHECK(value.get_value_unsafe<bool>() == true);
 
         value = ctor.get_metadata(E_MetaData::TOOL_TIP);
         REQUIRE(value.is_type<std::string>() == true);
-        CHECK(value.get_value<std::string>() == "This is a ToolTip.");
+        CHECK(value.get_value_unsafe<std::string>() == "This is a ToolTip.");
     }
 
     SECTION("function as ctor")
@@ -214,27 +214,27 @@ TEST_CASE("constructor - get_metadata", "[constructor]")
         constructor ctor = type::get<ctor_misc_test>().get_constructor({type::get<int>()});
         variant value = ctor.get_metadata(E_MetaData::SCRIPTABLE);
         REQUIRE(value.is_type<bool>() == true);
-        CHECK(value.get_value<bool>() == false);
+        CHECK(value.get_value_unsafe<bool>() == false);
 
         value = ctor.get_metadata(E_MetaData::TOOL_TIP);
         REQUIRE(value.is_type<std::string>() == true);
-        CHECK(value.get_value<std::string>() == "This is another ToolTip.");
+        CHECK(value.get_value_unsafe<std::string>() == "This is another ToolTip.");
     }
 
     SECTION("normal ctor - with default argument")
     {
         REQUIRE(ctor_list[4].get_metadata(E_MetaData::SCRIPTABLE).is_type<bool>() == true);
-        CHECK(ctor_list[4].get_metadata(E_MetaData::SCRIPTABLE).get_value<bool>() == true);
+        CHECK(ctor_list[4].get_metadata(E_MetaData::SCRIPTABLE).get_value_unsafe<bool>() == true);
     }
 
     SECTION("function as ctor - with default arguments")
     {
         REQUIRE(ctor_list[5].get_metadata(E_MetaData::SCRIPTABLE).is_type<bool>() == true);
-        CHECK(ctor_list[5].get_metadata(E_MetaData::SCRIPTABLE).get_value<bool>() == true);
+        CHECK(ctor_list[5].get_metadata(E_MetaData::SCRIPTABLE).get_value_unsafe<bool>() == true);
     }
 
     //negative test
-    CHECK(type::get_by_name("").get_constructor().get_metadata("42").is_valid() == false);
+    CHECK(type::get_by_name("").get_constructor().get_metadata(rttr::hash_string("42")).is_valid() == false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -243,11 +243,11 @@ TEST_CASE("constructor - get_metadata - type", "[constructor]")
 {
     variant var = type::get<ctor_misc_test>().get_metadata(E_MetaData::SCRIPTABLE);
     REQUIRE(var.is_type<bool>() == true);
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
     var = type::get<ctor_misc_test>().get_metadata(E_MetaData::TOOL_TIP);
     REQUIRE(var.is_type<std::string>() == true);
-    CHECK(var.get_value<std::string>() == "This is a type ToolTip.");
+    CHECK(var.get_value_unsafe<std::string>() == "This is a type ToolTip.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////

@@ -88,7 +88,7 @@ TEST_CASE("variant:to enum - from bool", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<variant_enum_test>()) == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_1);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_1);
 
         // false case
         var = false;
@@ -96,7 +96,7 @@ TEST_CASE("variant:to enum - from bool", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<variant_enum_test>()) == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_0);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_0);
     }
 
     SECTION("invalid conversion")
@@ -126,7 +126,7 @@ TEST_CASE("variant:to enum - from char", "[variant]")
 
         CHECK(var.convert(type::get<enum_int8_t>()) == true);
         REQUIRE(var.is_type<enum_int8_t>() == true);
-        CHECK(var.get_value<enum_int8_t>() == enum_int8_t::VALUE_1);
+        CHECK(var.get_value_unsafe<enum_int8_t>() == enum_int8_t::VALUE_1);
     }
 
     SECTION("invalid conversion")
@@ -156,7 +156,7 @@ TEST_CASE("variant:to enum - from std::string", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -174,6 +174,36 @@ TEST_CASE("variant:to enum - from std::string", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant:to enum - from std::string_view", "[variant]")
+{
+    SECTION("valid conversion")
+    {
+        variant var = std::string_view("VALUE_2");
+        REQUIRE(var.can_convert<variant_enum_test>() == true);
+        bool ok = false;
+        CHECK(var.convert<variant_enum_test>(&ok) == variant_enum_test::VALUE_2);
+        CHECK(ok == true);
+
+        CHECK(var.convert(type::get<variant_enum_test>()) == true);
+        REQUIRE(var.is_type<variant_enum_test>() == true);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
+    }
+
+    SECTION("invalid conversion")
+    {
+        variant var = std::string_view("VALUE_XY");
+        REQUIRE(var.can_convert<variant_enum_test>() == true);
+        bool ok = false;
+        var.convert<variant_enum_test>(&ok); // undefined return value.. thats why no compare is done.
+        CHECK(ok == false);
+
+        CHECK(var.convert(type::get<variant_enum_test>()) == false);
+        CHECK(var.is_type<std::string_view>() == true);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant:to enum - from int", "[variant]")
 {
     SECTION("valid conversion positive")
@@ -186,7 +216,7 @@ TEST_CASE("variant:to enum - from int", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -216,7 +246,7 @@ TEST_CASE("variant:to enum - from float", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -246,7 +276,7 @@ TEST_CASE("variant:to enum - from double", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -276,7 +306,7 @@ TEST_CASE("variant:to enum - from int8_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -306,7 +336,7 @@ TEST_CASE("variant:to enum - from int16_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -336,7 +366,7 @@ TEST_CASE("variant:to enum - from int32_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -366,7 +396,7 @@ TEST_CASE("variant:to enum - from int64_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -396,7 +426,7 @@ TEST_CASE("variant:to enum - from uint8_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -426,7 +456,7 @@ TEST_CASE("variant:to enum - from uint16_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -456,7 +486,7 @@ TEST_CASE("variant:to enum - from uint32_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")
@@ -486,7 +516,7 @@ TEST_CASE("variant:to enum - from uint64_t", "[variant]")
 
         CHECK(var.convert(type::get<variant_enum_test>()) == true);
         REQUIRE(var.is_type<variant_enum_test>() == true);
-        CHECK(var.get_value<variant_enum_test>() == variant_enum_test::VALUE_2);
+        CHECK(var.get_value_unsafe<variant_enum_test>() == variant_enum_test::VALUE_2);
     }
 
     SECTION("invalid conversion")

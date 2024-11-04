@@ -27,12 +27,10 @@ Or you might want to group stuff together, like: *give me all primitive properti
 
 It is also possible to retrieve information about the inheritance graph of a class.
 ~~~~{.cpp}
-struct Base { RTTR_ENABLE() };
-struct Derived : Base { RTTR_ENABLE(Base) };
+struct Base { RTTR_DECLARE_ROOT() };
+struct Derived : Base { RTTR_DECLARE_ANCESTORS(Base) };
 
-Derived d;
-
-std::vector<type> base_list = type::get(d).get_base_classes();
+std::vector<type> base_list = type::get<Derived>().get_base_classes();
 
 for (auto& t : base_list)
   std::cout << t.get_name() << std::endl; // 'struct Base'
@@ -47,7 +45,7 @@ type::get(d).is_derived_from<Base>(); // true
 The meta information presented in the first code snipped (e.g. @ref rttr::type::is_class() "is_class()", @ref rttr::type::is_pointer() "is_pointer()")  will work without registering anything manually to the type system.
 In order to retrieve class hierarchy informations, like @ref rttr::type::get_base_classes() "get_base_classes()" or @ref rttr::type::is_derived_from() "is_derived_from()", 
 you will have to add manually some information to the type system.
-How this will be done, is discussed in the [next](@ref rttr_type_class_hierachy_page "Using RTTR_ENABLE") chapter.
+How this will be done, is discussed in the [next](@ref rttr_type_class_hierachy_page "Register Class Hierarchy") chapter.
 
 Summary
 -------
@@ -55,4 +53,4 @@ Summary
 
 <hr>
 
-<div class="btn btn-default doxy-button">[previous](@ref rttr_type_get_page "Retrieving rttr::type objects")</div><div class="btn btn-default doxy-button">[next](@ref rttr_type_class_hierachy_page "Using RTTR_ENABLE")</div>
+<div class="btn btn-default doxy-button">[previous](@ref rttr_type_get_page "Retrieving rttr::type objects")</div><div class="btn btn-default doxy-button">[next](@ref rttr_type_class_hierachy_page "Register Class Hierarchy")</div>

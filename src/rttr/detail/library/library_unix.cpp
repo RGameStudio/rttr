@@ -36,6 +36,7 @@
 #include <vector>
 #include <dlfcn.h>
 #include <cstdio>
+#include <filesystem>
 
 namespace
 {
@@ -75,23 +76,10 @@ std::vector<std::string> get_suffixes_sys(const std::string& version)
     return result;
 }
 
-bool file_exist(const std::string& fileName)
+static std::string_view get_error()
 {
-    if (auto file = fopen(fileName.c_str(), "r"))
-    {
-        fclose(file);
-        return true;
-    } else
-    {
-        return false;
-    }
-}
-
-static rttr::string_view get_error()
-{
-    using namespace rttr;
     auto err = dlerror();
-    return err ? string_view(err): string_view();
+    return err ? std::string_view(err) : std::string_view();
 }
 
 } // end namespace anonymous
@@ -136,9 +124,13 @@ bool library_private::load_native()
             attempt = prefix_list[prefix] + m_file_name + suffix_list[suffix];
 
             m_handle = dlopen(attempt.c_str(), dl_flags);
-            if (!m_handle && is_absolute_path(m_file_name) && file_exist(attempt))
+            if (!m_handle)
             {
-                retry = false;
+                auto absPath = std::filesystem::absolute(attempt);
+                if(std::filesystem::exists(absPath))
+                {
+                    retry = false;
+                }
             }
         }
 
@@ -146,7 +138,7 @@ bool library_private::load_native()
 
     if (!m_handle)
     {
-        m_error_string = "Cannot load library " + m_file_name + " " + get_error();
+        m_error_string = "Cannot load library " + m_file_name + " " + std::string(get_error());
     }
     else
     {
@@ -163,7 +155,7 @@ bool library_private::unload_native()
 {
     if (dlclose(m_handle))
     {
-         m_error_string = "Cannot unload library: '" + m_file_name + "'" +  get_error();
+         m_error_string = "Cannot unload library: '" + m_file_name + "'" +  std::string(get_error());
          return false;
     }
 

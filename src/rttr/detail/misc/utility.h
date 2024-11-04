@@ -207,19 +207,30 @@ static RTTR_INLINE bool check_all_true(bool arg1, BoolArgs... args) { return arg
 template<typename ElementType>
 struct copy_array_impl
 {
-    void operator()(const ElementType &in, ElementType &out)
+    void copy(const ElementType &in, ElementType &out)
     {
         out = in;
+    }
+
+    void move(ElementType&& in, ElementType& out)
+    {
+        out = std::move(in);
     }
 };
 
 template<typename ElementType, std::size_t Count>
 struct copy_array_impl<ElementType[Count]>
 {
-    void operator()(const ElementType (&in)[Count], ElementType (&out)[Count])
+    void copy(const ElementType (&in)[Count], ElementType (&out)[Count])
     {
-        for(std::size_t i = 0; i < Count; ++i)
-            copy_array_impl<ElementType>()(in[i], out[i]);
+        for (std::size_t i = 0; i < Count; ++i)
+            copy_array_impl<ElementType>().copy(in[i], out[i]);
+    }
+
+    void move(ElementType (&&in)[Count], ElementType (&out)[Count])
+    {
+        for (std::size_t i = 0; i < Count; ++i)
+            copy_array_impl<ElementType>().move(std::move(in[i]), out[i]);
     }
 };
 
@@ -227,7 +238,15 @@ template<typename ElementType, std::size_t Count>
 auto copy_array(const ElementType (&in)[Count], ElementType (&out)[Count])
     -> ElementType (&)[Count]
 {
-    copy_array_impl<ElementType[Count]>()(in, out);
+    copy_array_impl<ElementType[Count]>().copy(in, out);
+    return out;
+}
+
+template<typename ElementType, std::size_t Count>
+auto move_array(ElementType (&&in)[Count], ElementType (&out)[Count])
+    -> ElementType (&)[Count]
+{
+    copy_array_impl<ElementType[Count]>().move(std::move(in), out);
     return out;
 }
 
@@ -294,6 +313,23 @@ template<typename T>
 RTTR_FORCE_INLINE typename std::enable_if<!std::is_pointer<T>::value, void*>::type as_void_ptr(const T& obj)
 {
     return const_cast<void*>(reinterpret_cast<const volatile void*>(&obj));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+RTTR_FORCE_INLINE typename std::enable_if<std::is_pointer<T>::value, const void*>::type as_const_void_ptr(const T& obj)
+{
+    return const_cast<const void*>(reinterpret_cast<const volatile void*>(obj));
+}
+
+
+template<typename T>
+RTTR_FORCE_INLINE typename std::enable_if<!std::is_pointer<T>::value, const void*>::type as_const_void_ptr(const T& obj)
+{
+    return const_cast<const void*>(reinterpret_cast<const volatile void*>(&obj));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -485,7 +521,7 @@ RTTR_INLINE static std::size_t generate_hash(const char* text, std::size_t lengt
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// custom has functor, to make sure that "std::string" and "rttr::string_view" uses the same hashing algorithm
+// custom has functor, to make sure that "std::string" and "std::string_view" uses the same hashing algorithm
 template <typename T>
 struct hash;
 
@@ -494,6 +530,16 @@ struct hash<std::string>
 {
 public:
     size_t operator()(const std::string& text) const
+    {
+        return generate_hash(text.data(), text.length());
+    }
+};
+
+template <>
+struct hash<std::string_view>
+{
+public:
+    size_t operator()(const std::string_view& text) const
     {
         return generate_hash(text.data(), text.length());
     }

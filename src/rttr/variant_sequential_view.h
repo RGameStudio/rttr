@@ -225,11 +225,18 @@ class RTTR_API variant_sequential_view
         bool set_size(std::size_t size) const RTTR_NOEXCEPT;
 
         /*!
-         * \brief Insert a value into the container.
+         * \brief Insert a copy of the value into the container.
          *
          * \return An iterator to the inserted element, otherwise an invalid iterator, when the insertion was not possible.
          */
         const_iterator insert(const const_iterator& pos, argument value);
+
+        /*!
+         * \brief Insert a value into the container by moving from argument.
+         *
+         * \return An iterator to the inserted element, otherwise an invalid iterator, when the insertion was not possible.
+         */
+        const_iterator insert_move(const const_iterator& pos, argument value);
 
         /*!
          * \brief Removes the element (if one exists) at the position \p pos.
@@ -252,6 +259,14 @@ class RTTR_API variant_sequential_view
          * \return `true` if the value could be set, otherwise `false`.
          */
         bool set_value(std::size_t index, argument arg);
+
+        /*!
+         * \brief Move the content of the argument \p arg at the specified index \p index
+         *        into the underlying sequential container.
+         *
+         * \return `true` if the value could be set, otherwise `false`.
+         */
+        bool set_value_move(std::size_t index, argument arg);
 
         /*!
          * \brief Returns the current value at index \p index.
@@ -281,6 +296,13 @@ class RTTR_API variant_sequential_view
          * \return Iterator to the element following the last element.
          */
         const_iterator end() const;
+
+        /*!
+         * \brief Increase the capacity of the container to a value that's greater or equal to n
+         *
+         * \remark Invalidates all references, pointers, or iterators referring to contained elements.
+         */
+        void reserve(size_t n);
 
         /*!
          * The \ref variant_sequential_view::const_iterator allows iteration over an sequential container in a variant.
@@ -332,7 +354,7 @@ class RTTR_API variant_sequential_view
                  * When the data cannot be returns as reference from the container, the data is stored directly inside the variant.
                  * E.g. for `std::vector<bool>` no reference can be returned.
                  *
-                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value<T>()
+                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value_unsafe<T>()
                  */
                 const variant operator*() const;
 
@@ -340,7 +362,7 @@ class RTTR_API variant_sequential_view
                  * \brief Returns the current value, stored inside a `std::reference_wrapper<T>`
                  *        and copied to a variant.
                  *
-                 * \see operator*(), variant::extract_wrapped_value(), variant::get_wrapped_value<T>()
+                 * \see operator*(), variant::extract_wrapped_value(), variant::get_wrapped_value_unsafe<T>()
                  */
                 const variant get_data() const;
 

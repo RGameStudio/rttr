@@ -32,6 +32,8 @@ namespace rttr
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+const detail::as_copy policy::prop::as_copy = {};
+
 const detail::bind_as_ptr policy::prop::bind_as_ptr = {};
 
 const detail::as_reference_wrapper policy::prop::as_reference_wrapper = {};

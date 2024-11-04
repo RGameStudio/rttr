@@ -34,7 +34,6 @@
 #include <catch/catch.hpp>
 
 using namespace rttr;
-using namespace std;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +46,8 @@ struct top
     virtual ~top() {}
     top() : _p1(12){}
     int _p1;
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,8 @@ struct left : virtual top
     ~left() override = default;
     bool _p2;
 
-    RTTR_ENABLE(top)
+    RTTR_DECLARE_ANCESTORS(top)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +72,8 @@ struct right : virtual top
     ~right() override = default;
     bool _p3;
 
-    RTTR_ENABLE(top)
+    RTTR_DECLARE_ANCESTORS(top)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +84,8 @@ struct right_2
 
     right_2() : _p4(true){}
     bool _p4;
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +97,8 @@ struct bottom : left, right, right_2
 
     double _p5;
 
-    RTTR_ENABLE(left, right, right_2)
+    RTTR_DECLARE_ANCESTORS(left, right, right_2)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 }
@@ -119,12 +123,14 @@ struct base_class_with_props
     base_class_with_props() : value(100) {}
     int value;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct derived_class_without_registered_props : base_class_with_props
 {
-    RTTR_ENABLE(base_class_with_props)
+    RTTR_DECLARE_ANCESTORS(base_class_with_props)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -501,8 +507,8 @@ TEST_CASE("property - class - inheritance - invoke", "[property]")
     property base_prop = t.get_property("top");
 
     variant ret = base_prop.get_value(top);
-    REQUIRE(ret.is_type<int>() == true);
-    CHECK(ret.get_value<int>() == 12);
+    REQUIRE(ret.is_type<std::reference_wrapper<int>>() == true);
+    CHECK(ret.get_value_unsafe<std::reference_wrapper<int>>().get() == 12);
     // try to change the value
     base_prop.set_value(top, 2000);
     CHECK(instance._p1 == 2000);
@@ -510,8 +516,8 @@ TEST_CASE("property - class - inheritance - invoke", "[property]")
     // and now the other way around, from bottom a top property
     property bottom_prop = t.get_property("bottom");
     ret = bottom_prop.get_value(instance);
-    REQUIRE(ret.is_type<double>() == true);
-    CHECK(ret.get_value<double>() == 23.0);
+    REQUIRE(ret.is_type<std::reference_wrapper<double>>() == true);
+    CHECK(ret.get_value_unsafe<std::reference_wrapper<double>>().get() == 23.0);
     // try to change the value
     bottom_prop.set_value(top, 42.0);
     CHECK(instance._p5 == 42.0);

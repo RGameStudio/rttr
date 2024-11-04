@@ -34,7 +34,6 @@
 #include <catch/catch.hpp>
 
 using namespace rttr;
-using namespace std;
 
 static int g_invalid_instance = 0;
 
@@ -65,6 +64,7 @@ private:
     RTTR_REGISTRATION_FRIEND
 };
 
+inline static constexpr uint64_t c_description_meta_key = rttr::hash_string("Description");
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // init static variables and some global functions added as properties to the test class
@@ -74,26 +74,26 @@ private:
 RTTR_REGISTRATION
 {
     registration::class_<property_member_obj_test>("property_member_obj_test")
-        .property("p1",    &property_member_obj_test::_p1) ( metadata("Description", "Some Text") )
-        .property_readonly("p2",    &property_member_obj_test::_p2) ( metadata("Description", "Some Text") )
+        .property("p1",    &property_member_obj_test::_p1) ( metadata(c_description_meta_key, "Some Text") )
+        .property_readonly("p2",    &property_member_obj_test::_p2) ( metadata(c_description_meta_key, "Some Text") )
         .property("p3",    &property_member_obj_test::_p3)
         (
-            metadata("Description", "Some Text"),
+            metadata(c_description_meta_key, "Some Text"),
             policy::prop::bind_as_ptr
         )
          .property_readonly("p4",    &property_member_obj_test::_p4)
         (
-            metadata("Description", "Some Text"),
+            metadata(c_description_meta_key, "Some Text"),
             policy::prop::bind_as_ptr
         )
         .property("p5",    &property_member_obj_test::_p3)
         (
-            metadata("Description", "Some Text"),
+            metadata(c_description_meta_key, "Some Text"),
             policy::prop::as_reference_wrapper
         )
          .property_readonly("p6",    &property_member_obj_test::_p4)
         (
-            metadata("Description", "Some Text"),
+            metadata(c_description_meta_key, "Some Text"),
             policy::prop::as_reference_wrapper
         )
         .property("p7", &property_member_obj_test::_p7)
@@ -109,7 +109,7 @@ RTTR_REGISTRATION
 TEST_CASE("property - class object", "[property]")
 {
     property_member_obj_test obj;
-    type prop_type = type::get(obj);
+    type prop_type = type::get<decltype(obj)>();
     REQUIRE(prop_type.is_valid() == true);
 
     property prop = prop_type.get_property("p1");
@@ -118,15 +118,15 @@ TEST_CASE("property - class object", "[property]")
     // metadata
     CHECK(prop.is_readonly() == false);
     CHECK(prop.is_static() == false);
-    CHECK(prop.get_type() == type::get<int>());
+    CHECK(prop.get_type() == type::get<std::reference_wrapper<int>>());
     CHECK(prop.get_declaring_type() == type::get<property_member_obj_test>());
     CHECK(prop.get_access_level() == rttr::access_levels::public_access);
-    CHECK(prop.get_metadata("Description") == "Some Text");
+    CHECK(prop.get_metadata(c_description_meta_key) == "Some Text");
 
     // invoke
     CHECK(prop.set_value(obj, 42) == true);
-    CHECK(prop.get_value(obj).is_type<int>() == true);
-    CHECK(prop.get_value(obj).get_value<int>() == 42);
+    CHECK(prop.get_value(obj).is_type<std::reference_wrapper<int>>() == true);
+    CHECK(prop.get_value(obj).get_value_unsafe<std::reference_wrapper<int>>().get() == 42);
 
     // invalid invoke
     CHECK(prop.set_value(obj, "test") == false);
@@ -138,7 +138,7 @@ TEST_CASE("property - class object", "[property]")
 TEST_CASE("property - class object - read only", "[property]")
 {
     property_member_obj_test obj;
-    type prop_type = type::get(obj);
+    type prop_type = type::get<decltype(obj)>();
 
     property prop = prop_type.get_property("p2");
     REQUIRE(prop.is_valid() == true);
@@ -146,13 +146,13 @@ TEST_CASE("property - class object - read only", "[property]")
     // metadata
     CHECK(prop.is_readonly() == true);
     CHECK(prop.is_static() == false);
-    CHECK(prop.get_type() == type::get<int>());
+    CHECK(prop.get_type() == type::get<std::reference_wrapper<const int>>());
     CHECK(prop.get_access_level() == rttr::access_levels::public_access);
-    CHECK(prop.get_metadata("Description") == "Some Text");
+    CHECK(prop.get_metadata(c_description_meta_key) == "Some Text");
 
     // invoke
-    CHECK(prop.get_value(obj).is_type<int>() == true);
-    CHECK(prop.get_value(obj).get_value<int>() == 12);
+    CHECK(prop.get_value(obj).is_type<std::reference_wrapper<const int>>() == true);
+    CHECK(prop.get_value(obj).get_value_unsafe<std::reference_wrapper<const int>>().get() == 12);
 
     // invalid invoke
     CHECK(prop.set_value(obj, 23) == false);
@@ -164,7 +164,7 @@ TEST_CASE("property - class object - read only", "[property]")
 TEST_CASE("property - class object - bind as ptr", "[property]")
 {
     property_member_obj_test obj;
-    type prop_type = type::get(obj);
+    type prop_type = type::get<decltype(obj)>();
 
     property prop = prop_type.get_property("p3");
     REQUIRE(prop.is_valid() == true);
@@ -175,17 +175,24 @@ TEST_CASE("property - class object - bind as ptr", "[property]")
     CHECK(prop.get_type().get_raw_type().is_sequential_container() == true);
     CHECK(prop.get_type() == type::get<std::vector<int>*>());
     CHECK(prop.get_access_level() == rttr::access_levels::public_access);
-    CHECK(prop.get_metadata("Description") == "Some Text");
+    CHECK(prop.get_metadata(c_description_meta_key) == "Some Text");
 
     // invoke
     REQUIRE(prop.get_value(obj).is_type<std::vector<int>*>() == true);
-    auto ptr = prop.get_value(obj).get_value<std::vector<int>*>();
+    auto ptr = prop.get_value(obj).get_value_unsafe<std::vector<int>*>();
     CHECK(ptr == &obj._p3);
     CHECK(prop.set_value(obj, ptr) == true);
 
     std::vector<int> some_vec(1, 12);
     CHECK(prop.set_value(obj, &some_vec) == true);
     CHECK(some_vec == obj._p3);
+    CHECK(!some_vec.empty());
+
+    // move
+    some_vec = { 5, 6, 7 };
+    CHECK(prop.set_value_move(obj, &some_vec) == true);
+    CHECK(obj._p3.size() == 3);
+    CHECK(some_vec.empty());
 
     // invalid invoke
     CHECK(prop.set_value(obj, "test") == false);
@@ -198,7 +205,7 @@ TEST_CASE("property - class object - bind as ptr", "[property]")
 TEST_CASE("property - class object - read only - bind as ptr", "[property]")
 {
     property_member_obj_test obj;
-    type prop_type = type::get(obj);
+    type prop_type = type::get<decltype(obj)>();
 
     property prop = prop_type.get_property("p4");
     REQUIRE(prop.is_valid() == true);
@@ -209,11 +216,11 @@ TEST_CASE("property - class object - read only - bind as ptr", "[property]")
     CHECK(prop.get_type().get_raw_type().is_sequential_container() == true);
     CHECK(prop.get_type() == type::get<const std::vector<int>*>());
     CHECK(prop.get_access_level() == rttr::access_levels::public_access);
-    CHECK(prop.get_metadata("Description") == "Some Text");
+    CHECK(prop.get_metadata(c_description_meta_key) == "Some Text");
 
     // invoke
     CHECK(prop.get_value(obj).is_type<const std::vector<int>*>() == true);
-    auto ptr = prop.get_value(obj).get_value<const std::vector<int>*>();
+    auto ptr = prop.get_value(obj).get_value_unsafe<const std::vector<int>*>();
     CHECK(ptr == &obj._p4);
     CHECK(prop.set_value(obj, ptr) == false);
 
@@ -232,7 +239,7 @@ TEST_CASE("property - class object - read only - bind as ptr", "[property]")
 TEST_CASE("property - class object - as_reference_wrapper", "[property]")
 {
     property_member_obj_test obj;
-    type prop_type = type::get(obj);
+    type prop_type = type::get<decltype(obj)>();
 
     property prop = prop_type.get_property("p5");
     REQUIRE(prop.is_valid() == true);
@@ -244,11 +251,11 @@ TEST_CASE("property - class object - as_reference_wrapper", "[property]")
     CHECK(prop.get_type() == type::get<std::reference_wrapper<std::vector<int>>>());
     CHECK(prop.get_type().is_wrapper() == true);
     CHECK(prop.get_access_level() == rttr::access_levels::public_access);
-    CHECK(prop.get_metadata("Description") == "Some Text");
+    CHECK(prop.get_metadata(c_description_meta_key) == "Some Text");
 
     // invoke
     REQUIRE(prop.get_value(obj).is_type<std::reference_wrapper<std::vector<int>>>() == true);
-    auto value = prop.get_value(obj).get_value<std::reference_wrapper<std::vector<int>>>();
+    auto value = prop.get_value(obj).get_value_unsafe<std::reference_wrapper<std::vector<int>>>();
     CHECK(value.get() == obj._p3);
     CHECK(prop.set_value(obj, value) == true);
 
@@ -260,9 +267,29 @@ TEST_CASE("property - class object - as_reference_wrapper", "[property]")
     CHECK(view.get_size() == 1000);
     CHECK(view.set_value(20, 42) == true);
 
+    // set value using ref
     std::vector<int> some_vec(1, 12);
     CHECK(prop.set_value(obj, std::ref(some_vec)) == true);
     CHECK(some_vec == obj._p3);
+    CHECK(!some_vec.empty());
+
+    // move value using ref
+    some_vec = {5, 6, 7};
+    CHECK(prop.set_value_move(obj, std::ref(some_vec)) == true);
+    CHECK(obj._p3.size() == 3);
+    CHECK(some_vec.empty());
+
+    // set value using copy
+    some_vec = {8, 9, 10};
+    CHECK(prop.set_value(obj, some_vec) == true);
+    CHECK(some_vec == obj._p3);
+    CHECK(!some_vec.empty());
+
+    // move value using copy
+    some_vec = {11, 12, 13};
+    CHECK(prop.set_value_move(obj, some_vec) == true);
+    CHECK(obj._p3.size() == 3);
+    CHECK(some_vec.empty());
 
     // invalid invoke
     CHECK(prop.set_value(obj, "test") == false);
@@ -275,7 +302,7 @@ TEST_CASE("property - class object - as_reference_wrapper", "[property]")
 TEST_CASE("property - class object - read only - as_reference_wrapper", "[property]")
 {
     property_member_obj_test obj;
-    type prop_type = type::get(obj);
+    type prop_type = type::get<decltype(obj)>();
 
     property prop = prop_type.get_property("p6");
     REQUIRE(prop.is_valid() == true);
@@ -287,11 +314,11 @@ TEST_CASE("property - class object - read only - as_reference_wrapper", "[proper
     CHECK(prop.get_type() == type::get<std::reference_wrapper<const std::vector<int>>>());
     CHECK(prop.get_type().is_wrapper() == true);
     CHECK(prop.get_access_level() == rttr::access_levels::public_access);
-    CHECK(prop.get_metadata("Description") == "Some Text");
+    CHECK(prop.get_metadata(c_description_meta_key) == "Some Text");
 
     // invoke
     CHECK(prop.get_value(obj).is_type<std::reference_wrapper<const std::vector<int>>>() == true);
-    auto value = prop.get_value(obj).get_value<std::reference_wrapper<const std::vector<int>>>();
+    auto value = prop.get_value(obj).get_value_unsafe<std::reference_wrapper<const std::vector<int>>>();
     CHECK(value.get() == obj._p4);
     CHECK(prop.set_value(obj, value) == false);
 
@@ -321,7 +348,7 @@ TEST_CASE("property - variant as property", "[property]")
     SECTION("Writable")
     {
         property_member_obj_test obj;
-        type prop_type = type::get(obj);
+        type prop_type = type::get<decltype(obj)>();
 
         property prop = prop_type.get_property("p7");
         REQUIRE(prop.is_valid() == true);
@@ -331,14 +358,31 @@ TEST_CASE("property - variant as property", "[property]")
 
         var = 23;
         prop.set_value(obj, var);
-
         CHECK(obj._p7.to_int() == 23);
+
+        // copy & move
+        var = std::string("one");
+        prop.set_value(obj, var);
+        CHECK(obj._p7.to_string() == "one");
+        CHECK(var.to_string() == "one");
+        var = std::string("two");
+        prop.set_value(obj, std::move(var));
+        CHECK(obj._p7.to_string() == "two");
+        CHECK(var.to_string() == "two");
+        var = std::string("three");
+        prop.set_value_move(obj, var);
+        CHECK(obj._p7.to_string() == "three");
+        CHECK(!var);
+        var = std::string("four");
+        prop.set_value_move(obj, std::move(var));
+        CHECK(obj._p7.to_string() == "four");
+        CHECK(!var);
     }
 
     SECTION("Read Only")
     {
         property_member_obj_test obj;
-        type prop_type = type::get(obj);
+        type prop_type = type::get<decltype(obj)>();
 
         property prop = prop_type.get_property("p8");
         REQUIRE(prop.is_valid() == true);
@@ -355,7 +399,7 @@ TEST_CASE("property - raw pointer as property", "[property]")
     SECTION("Writable")
     {
         property_member_obj_test obj;
-        type prop_type = type::get(obj);
+        type prop_type = type::get<decltype(obj)>();
 
         property prop = prop_type.get_property("p9");
         REQUIRE(prop.is_valid() == true);
@@ -372,16 +416,17 @@ TEST_CASE("property - raw pointer as property", "[property]")
     SECTION("Read Only")
     {
         property_member_obj_test obj;
-        type prop_type = type::get(obj);
+        type prop_type = type::get<decltype(obj)>();
 
         property prop = prop_type.get_property("p10");
         REQUIRE(prop.is_valid() == true);
+        REQUIRE(prop.get_type() == type::get<std::reference_wrapper<int* const>>());
 
         variant var = prop.get_value(obj);
         CHECK(obj._p10 == &obj._p1);
 
-        CHECK(var.get_type() == type::get<int*>());
-        CHECK(obj._p10 == var.get_value<int*>());
+        CHECK(var.get_type() == type::get<std::reference_wrapper<int* const>>());
+        CHECK(obj._p10 == var.get_value_unsafe<std::reference_wrapper<int* const>>());
     }
 }
 
@@ -390,9 +435,10 @@ TEST_CASE("property - raw pointer as property", "[property]")
 TEST_CASE("property - array property", "[property]")
 {
     property_member_obj_test obj;
-    type t = type::get(obj);
+    type t = type::get<decltype(obj)>();
     auto prop = t.get_property("p11");
     REQUIRE(prop.is_valid() == true);
+    REQUIRE(prop.get_type() == type::get<std::reference_wrapper<int[4][4]>>());
 
     auto var = prop.get_value(obj);
     auto view = var.create_sequential_view();
@@ -403,8 +449,7 @@ TEST_CASE("property - array property", "[property]")
     CHECK(view.set_value(2, line) == true);
 
     CHECK(prop.set_value(obj, var) == true);
-    CHECK(var == obj._p11);
-
+    CHECK(var.get_value_unsafe<std::reference_wrapper<int[4][4]>>() == obj._p11);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -1313,7 +1313,131 @@ struct RTTR_API convert_from<std::string>
 
     static RTTR_INLINE bool to_enum(const std::string& from, argument& to)
     {
-        return to_enumeration(string_view(from), to);
+        return to_enumeration(std::string_view(from), to);
+    }
+
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<>
+struct RTTR_API convert_from<std::string_view>
+{
+    static RTTR_INLINE bool to(std::string_view from, bool& to)
+    {
+        bool ok;
+        to = string_to_bool(std::string(from), &ok);
+        return ok;
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, char& to)
+    {
+        const auto& val = from;
+        if (val.empty())
+            to ='\0';
+        else
+            to = val[0];
+
+        return true;
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, int8_t& to)
+    {
+        bool ok;
+        int val = string_to_int(std::string(from), &ok);
+        if (!ok)
+            return false;
+
+        return convert_to(val, to);
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, int16_t& to)
+    {
+        bool ok;
+        int val = string_to_int(std::string(from), &ok);
+        if (!ok)
+            return false;
+
+        return convert_to(val, to);
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, int32_t& to)
+    {
+        bool ok;
+        to = string_to_int(std::string(from), &ok);
+        return ok;
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, int64_t& to)
+    {
+        bool ok;
+        to = string_to_long_long(std::string(from), &ok);
+        return ok;
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, uint8_t& to)
+    {
+        bool ok;
+        unsigned int val = string_to_int(std::string(from), &ok);
+        if (!ok)
+            return false;
+
+        return convert_to(val, to);
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, uint16_t& to)
+    {
+        bool ok;
+        unsigned int val = string_to_int(std::string(from), &ok);
+        if (!ok)
+            return false;
+
+        return convert_to(val, to);
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, uint32_t& to)
+    {
+        bool ok;
+        const auto val = string_to_ulong(std::string(from), &ok);
+        if (!ok)
+            return false;
+
+        return convert_to(val, to);
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, uint64_t& to)
+    {
+        bool ok;
+        const auto val = string_to_ulong_long(std::string(from), &ok);
+        if (!ok)
+            return false;
+
+        return convert_to(val, to);
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, float& to)
+    {
+        bool ok;
+        to = string_to_float(std::string(from), &ok);
+        return ok;
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, double& to)
+    {
+        bool ok;
+        to = string_to_double(std::string(from), &ok);
+        return ok;
+    }
+
+    static RTTR_INLINE bool to(std::string_view from, std::string& to)
+    {
+        to = from;
+        return true;
+    }
+
+    static RTTR_INLINE bool to_enum(std::string_view from, argument& to)
+    {
+        return to_enumeration(std::string_view(from), to);
     }
 
 };
@@ -1431,7 +1555,7 @@ struct convert_from_enum
 
     static RTTR_INLINE bool to(const T& from, std::string& to)
     {
-        to = get_enumeration_name(from).to_string();
+        to = std::string(get_enumeration_name(from));
         return (to.empty() == false);
     }
 

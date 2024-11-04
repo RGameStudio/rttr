@@ -35,36 +35,49 @@ namespace detail
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-static type_data& get_invalid_type_data_impl() RTTR_NOEXCEPT
+static std::unique_ptr<type_data> get_invalid_type_data_impl() RTTR_NOEXCEPT
 {
-    static type_data instance{ nullptr, nullptr,
-                               nullptr,
-                               std::string(""), string_view(),
-                               0, 0,
-                               &create_invalid_variant_policy::create_variant,
-                               &base_classes<void>::get_types,
-                               nullptr,
-                               nullptr,
-                               get_create_wrapper_func<void>(),
-                               nullptr,
-                               false,
-                               type_trait_value{0},
-                               class_data(nullptr, std::vector<type>())
-                              };
+    auto instance = std::make_unique<type_data>(
+            nullptr, //-- type_data* m_raw_type_data;
+            nullptr, //-- type_data* m_wrapped_type;
+            nullptr, //-- type_data* m_array_raw_type;
 
-    instance.raw_type_data  = &instance;
-    instance.wrapped_type   = &instance;
-    instance.array_raw_type = &instance;
+            std::string(""),    //-- std::string m_name;
+            std::string_view(), //-- std::string m_type_name;
+
+            0, //-- std::size_t m_get_sizeof;
+            0, //-- std::size_t m_get_pointer_dimension;
+
+            &create_invalid_variant_policy::create_variant, //-- impl::create_variant_func m_create_variant;
+
+            nullptr,                         //-- enumeration_wrapper_base* m_enum_wrapper;
+            get_create_wrapper_func<void>(), //-- impl::create_wrapper_func m_create_wrapper;
+            nullptr,                         //-- impl::visit_type_func     m_visit_type;
+
+            type_trait_value{0},                                        //-- type_traits m_type_traits;
+            class_data(nullptr, std::vector<template_argument_data>()), //-- class_data  m_class_data;
+
+            nullptr, //-- type_data* m_cont_key;
+            nullptr, //-- type_data* m_cont_value;
+
+            base_classes<void>::get_types(), //-- info_container m_base_types;
+
+            false //-- bool m_is_valid;
+        );
+
+    instance->m_raw_type_data  = instance.get();
+    instance->m_wrapped_type   = instance.get();
+    instance->m_array_raw_type = instance.get();
 
     return instance;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-type_data* get_invalid_type_data() RTTR_NOEXCEPT
+type_data& get_invalid_type_data() RTTR_NOEXCEPT
 {
-    static auto instance = &get_invalid_type_data_impl();
-    return instance;
+    static auto instance = get_invalid_type_data_impl();
+    return *instance;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

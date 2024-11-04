@@ -51,6 +51,7 @@ target_link_libraries(unit_test_base RTTR::Core)
 set_target_properties(unit_test_base PROPERTIES 
                                      DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                      FOLDER "Testing")
+target_compile_features(unit_test_base PUBLIC cxx_std_17)
 
 message(STATUS "Scanning " ${PROJECT_NAME} " module finished!")
 message(STATUS "")

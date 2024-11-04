@@ -34,8 +34,4 @@ set_target_properties(examples PROPERTIES
                   
 add_subdirectory (json_serialization)
 add_subdirectory (library_loading)
-if (MAX_CXX_STANDARD GREATER_EQUAL 14)
-    add_subdirectory (scripting)
-else()
-    message(WARNING "Cannot generate scripting example, because at least C++14 needed")
-endif()
+add_subdirectory (scripting)

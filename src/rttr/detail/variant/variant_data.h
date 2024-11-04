@@ -28,33 +28,20 @@
 #ifndef RTTR_VARIANT_DATA_H_
 #define RTTR_VARIANT_DATA_H_
 
-#include "rttr/detail/misc/misc_type_traits.h"
 #include <type_traits>
 
-namespace rttr
+namespace rttr::detail
 {
-namespace detail
-{
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-using variant_basic_types = type_list<bool,
-                                      signed char, unsigned char, char, wchar_t,
-                                      short int, unsigned short int, int, unsigned int,
-                                      long int, unsigned long int, long long int,
-                                      unsigned long long int, float, double, void*>;
 
 /*!
  * This is the data storage for the \ref variant class.
  */
-using variant_data = std::aligned_storage<max_sizeof_list<variant_basic_types>::value,
-                                          max_alignof_list<variant_basic_types>::value>::type;
+using variant_data = std::aligned_storage_t<sizeof(uint64_t[2]), alignof(uint64_t[2])>;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 struct RTTR_API void_variant_type {};
 
-} // end namespace detail
-} // end namespace rttr
+} // end namespace rttr::detail
 
 #endif // RTTR_VARIANT_DATA_H_

@@ -64,17 +64,17 @@ class RTTR_API enumeration_wrapper_base
 
         virtual type get_type() const RTTR_NOEXCEPT;
 
-        virtual array_range<string_view> get_names() const RTTR_NOEXCEPT;
+        virtual array_range<std::string_view> get_names() const RTTR_NOEXCEPT;
 
         virtual array_range<variant> get_values() const RTTR_NOEXCEPT;
 
-        virtual string_view value_to_name(argument& value) const;
+        virtual std::string_view value_to_name(argument& value) const;
 
-        virtual variant name_to_value(string_view name) const;
+        virtual variant name_to_value(std::string_view name) const;
 
         void set_declaring_type(type declaring_type) RTTR_NOEXCEPT;
 
-        virtual variant get_metadata(const variant& key) const;
+        virtual const variant& get_metadata(uint64_t key) const;
     private:
         type m_declaring_type;
 };

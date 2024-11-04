@@ -44,33 +44,17 @@ class RTTR_API metadata
 {
     public:
         metadata() { }
-        metadata(variant key, variant value) : m_key(std::move(key)), m_value(std::move(value)) { }
+        metadata(uint64_t key, variant value) : m_key(key), m_value(std::move(value)) { }
         metadata(const metadata& other) : m_key(other.m_key), m_value(other.m_value) {}
-        metadata(metadata&& other) : m_key(std::move(other.m_key)), m_value(std::move(other.m_value)) {}
+        metadata(metadata&& other) : m_key(other.m_key), m_value(std::move(other.m_value)) {}
         metadata& operator=(const metadata& other) { m_key = other.m_key; m_value = other.m_value; return *this; }
 
-        variant get_key() const      { return m_key; }
-        variant get_value() const    { return m_value; }
-
-        struct order_by_key
-        {
-            RTTR_INLINE bool operator () ( const metadata& _left, const metadata& _right )  const
-            {
-                return _left.m_key < _right.m_key;
-            }
-            RTTR_INLINE bool operator () ( const variant& _left, const metadata& _right ) const
-            {
-                return _left < _right.m_key;
-            }
-            RTTR_INLINE bool operator () ( const metadata& _left, const variant& _right ) const
-            {
-                return _left.m_key < _right;
-            }
-        };
+        uint64_t       get_key() const      { return m_key; }
+        const variant& get_value() const    { return m_value; }
 
     private:
-        variant m_key;
-        variant m_value;
+        uint64_t m_key;
+        variant  m_value;
 };
 
 } // end namespace detail

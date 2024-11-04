@@ -29,10 +29,10 @@
 #define RTTR_TYPE_REGISTER_H_
 
 #include "rttr/detail/base/core_prerequisites.h"
-#include "rttr/string_view.h"
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace rttr
@@ -103,9 +103,9 @@ public:
     static bool register_enumeration(enumeration_wrapper_base* enum_data);
     static bool unregister_enumeration(enumeration_wrapper_base* enum_data);
 
-    static void custom_name(type& t, string_view name);
+    static void custom_name(type& t, std::string_view name);
 
-    static void metadata( const type& t, std::vector<metadata> data);
+    static void metadata( const type& t, std::vector<metadata>&& data);
 
     static bool register_converter(const type_converter_base* converter);
     static bool unregister_converter(const type_converter_base* converter);
@@ -122,7 +122,7 @@ public:
     static void unregister_reg_manager(registration_manager* manager);
 
 
-    static type_data* register_type(type_data* info) RTTR_NOEXCEPT;
+    static std::pair<type_data*, bool> register_type(type_data&& info) RTTR_NOEXCEPT;
     static void unregister_type(type_data* info) RTTR_NOEXCEPT;
     static bool register_visit_type_func(type& t, visit_type_func) RTTR_NOEXCEPT;
 

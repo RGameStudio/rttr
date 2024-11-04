@@ -123,6 +123,41 @@ struct RTTR_API policy
     struct RTTR_API prop
     {
         /*!
+         * The \ref as_copy policy will bind a member object as *the same* type.
+         *
+         * This can be useful when binding small data types, integral types or view types.
+         *
+         * See following example code:
+         * \code{.cpp}
+         * using namespace rttr;
+         * struct Foo
+         * {
+         *   int value;
+         * };
+         *
+         * RTTR_REGISTRATION
+         * {
+         *      registration::class_<Foo>("Foo")
+         *                   .property("value", &Foo::value)
+         *                   (
+         *                       policy::prop::as_copy
+         *                   );
+         * }
+         *
+         * int main()
+         * {
+         *   Foo obj;
+         *   property prop = type::get<Foo>().get_property("value");
+         *   variant var = prop.get_value(obj);
+         *   std::cout << var.is_type<int>();               // prints "true"
+         *   prop.set_value(obj, var);                      // not really necessary, but remark that now an int is expected
+         *   return 0;
+         * }
+         * \endcode
+         */
+        static const detail::as_copy                as_copy;
+
+        /*!
          * The \ref bind_as_ptr policy will bind a member object as *pointer* type.
          *
          * This can be useful when binding big data types, like arrays, to avoid copies during get/set of the property.
@@ -155,7 +190,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::bind_as_ptr        bind_as_ptr;
+        static const detail::bind_as_ptr            bind_as_ptr;
 
         /*!
          * The \ref as_reference_wrapper policy will bind a member object as *std::reference_wrapper* type.
@@ -190,7 +225,7 @@ struct RTTR_API policy
          * }
          * \endcode
          */
-        static const detail::as_reference_wrapper        as_reference_wrapper;
+        static const detail::as_reference_wrapper   as_reference_wrapper;
     };
 
     /*!

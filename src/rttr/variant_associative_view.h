@@ -213,6 +213,22 @@ class RTTR_API variant_associative_view
         std::pair<const_iterator, bool> insert(argument key, argument value);
 
         /*!
+         * \brief Insert a key into the container using move.
+         *
+         * \return A pair consisting of an iterator to the inserted element (or to the element that prevented the insertion)
+         *         and a bool denoting whether the insertion took place.
+         */
+        std::pair<const_iterator, bool> insert_move(argument key);
+
+        /*!
+         * \brief Insert a key-value pair into the container using move.
+         *
+         * \return A pair consisting of an iterator to the inserted element (or to the element that prevented the insertion)
+         *         and a bool denoting whether the insertion took place.
+         */
+        std::pair<const_iterator, bool> insert_move(argument key, argument value);
+
+        /*!
          * \brief Finds an element with specific key \p key .
          *
          * \return The element with key equivalent to \p key. If no element is found an invalid iterator is returned.
@@ -288,6 +304,13 @@ class RTTR_API variant_associative_view
         const_iterator end() const;
 
         /*!
+         * \brief Increase the capacity of the container to a value that's greater or equal to n
+         *
+         * \remark Invalidates all references, pointers, or iterators referring to contained elements.
+         */
+        void reserve(size_t n);
+
+        /*!
          * The \ref variant_associative_view::const_iterator allows iteration over an associative container in a variant.
          * An instance can only be created by an variant_associative_view.
          *
@@ -337,7 +360,7 @@ class RTTR_API variant_associative_view
                  * Returns the underlying key and value stored in a `std::pair<key, value>`.
                  * The actual data in the variant is stored inside a `std::reference_wrapper<T>`
                  *
-                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value<T>()
+                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value_unsafe<T>()
                  */
                 const std::pair<variant, variant> operator*() const;
 
@@ -345,7 +368,7 @@ class RTTR_API variant_associative_view
                  * \brief Returns the current key, stored inside a `std::reference_wrapper<T>`
                  *        and copied to a variant.
                  *
-                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value<T>()
+                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value_unsafe<T>()
                  */
                 const variant get_key() const;
 
@@ -353,7 +376,7 @@ class RTTR_API variant_associative_view
                  * \brief Returns the current value, stored inside a `std::reference_wrapper<T>`
                  *        and copied to a variant.
                  *
-                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value<T>()
+                 * \see variant::extract_wrapped_value(), variant::get_wrapped_value_unsafe<T>()
                  */
                 const variant get_value() const;
 

@@ -66,7 +66,8 @@ struct shape
     point2d position;
     std::map<color, point2d> dictionary;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 private:
     bool visible = false;
 };
@@ -80,8 +81,11 @@ struct circle : shape
 
     int no_serialize = 100;
 
-    RTTR_ENABLE(shape)
+    RTTR_DECLARE_ANCESTORS(shape)
+    RTTR_ENABLE_OBJECT_INFO()
 };
+
+inline static constexpr uint64_t c_no_serialize_meta_key = rttr::hash_string("NO_SERIALIZE");
 
 RTTR_REGISTRATION
 {
@@ -98,7 +102,7 @@ RTTR_REGISTRATION
         .property("points", &circle::points)
         .property("no_serialize", &circle::no_serialize)
         (
-            metadata("NO_SERIALIZE", true)
+            metadata(c_no_serialize_meta_key, true)
         )
         ;
 

@@ -29,9 +29,7 @@
 #define RTTR_MISC_TYPE_TRAITS_H_
 
 #include "rttr/detail/base/core_prerequisites.h"
-
 #include "rttr/detail/misc/function_traits.h"
-
 #include "rttr/detail/misc/std_type_traits.h"
 #include "rttr/type_list.h"
 
@@ -46,6 +44,26 @@ template<typename T>
 struct associative_container_mapper;
 template<typename T>
 struct sequential_container_mapper;
+
+//-- ToDo - Denis - added this because std::is_copy_constructible/assignable doesn't recognize std/eastl::vector of non-copyable type,
+// see https://devblogs.microsoft.com/oldnewthing/20190926-00/?p=102924 for details
+template<typename T> struct is_copyable_impl
+{
+    static constexpr bool value = std::is_copy_assignable_v<T> && std::is_copy_constructible_v<T>;
+};
+
+template<typename T>
+using is_copyable = is_copyable_impl<T>;// std::is_copy_constructible<T>;
+
+template<typename T>
+constexpr auto is_copyable_v = is_copyable<T>::value;
+
+//-- ToDo - Denis - added this for bind
+template<typename T> struct pointer_to_member_decay;
+template<typename C, typename T> struct pointer_to_member_decay<T C::*>
+{
+    using type = T;
+};
 
 namespace detail
 {
@@ -884,15 +902,27 @@ namespace detail
 
     /////////////////////////////////////////////////////////////////////////////////////////
 
-     template <typename... T>
-     struct count_types : std::integral_constant<std::size_t, 0>::type
-     {
-     };
+    template <typename... T>
+    struct count_types : std::integral_constant<std::size_t, 0>::type
+    {
+    };
 
-     template <template <typename... > class List, typename... Types>
-     struct count_types<List<Types...>> : std::integral_constant<std::size_t, sizeof...(Types) - 1>::type
-     {
-     };
+    template <template <typename... > class List, typename... Types>
+    struct count_types<List<Types...>> : std::integral_constant<std::size_t, sizeof...(Types) - 1>::type
+    {
+    };
+
+    /////////////////////////////////////////////////////////////////////////////////////////
+
+    template<typename T> struct has_reserve_impl
+    {
+        template<typename U> static auto test(int) -> decltype(std::declval<U>().reserve(size_t{0}), std::true_type{});
+        template<typename> static auto test(...) -> std::false_type;
+        using type = decltype(test<T>(0));
+    };
+    template<typename T> struct has_reserve : has_reserve_impl<T>::type {};
+
+    /////////////////////////////////////////////////////////////////////////////////////////
 
 } // end namespace detail
 } // end namespace rttr

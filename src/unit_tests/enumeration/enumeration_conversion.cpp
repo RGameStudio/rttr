@@ -89,9 +89,9 @@ TEST_CASE("enumeration - name_to_value()", "[enumeration]")
     REQUIRE(e.name_to_value("write").is_type<access_t>()  == true);
     REQUIRE(e.name_to_value("write").is_type<access_t>()  == true);
 
-    CHECK(e.name_to_value("read").get_value<access_t>()   == access_t::read);
-    CHECK(e.name_to_value("write").get_value<access_t>()  == access_t::write);
-    CHECK(e.name_to_value("exec").get_value<access_t>()   == access_t::exec);
+    CHECK(e.name_to_value("read").get_value_unsafe<access_t>()   == access_t::read);
+    CHECK(e.name_to_value("write").get_value_unsafe<access_t>()  == access_t::write);
+    CHECK(e.name_to_value("exec").get_value_unsafe<access_t>()   == access_t::exec);
 
     // invalid
     CHECK(e.name_to_value("some name").is_valid()   == false);

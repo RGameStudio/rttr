@@ -191,6 +191,32 @@ variant variant::extract_wrapped_value() const
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+bool variant::assign_wrapped_value(variant&& value)
+{
+	return m_policy(detail::variant_policy_operation::ASSIGN_WRAPPED_VALUE, m_data, value);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+variant variant::extract_pointer_value() const
+{
+    variant var;
+    m_policy(detail::variant_policy_operation::EXTRACT_POINTER_VALUE, m_data, var);
+    return var;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool variant::is_const() const
+{
+    detail::data_address_container result{detail::get_invalid_type(), detail::get_invalid_type(), nullptr, nullptr};
+    m_policy(detail::variant_policy_operation::GET_ADDRESS_CONTAINER, m_data, result);
+
+    return result.m_const;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 variant variant::create_wrapped_value(const type& wrapped_type) const
 {
     variant var;
@@ -237,7 +263,7 @@ bool variant::can_convert(const type& target_type) const
 
     if (!source_type.is_wrapper() && target_type.is_wrapper())
     {
-        if (target_type.get_wrapped_type() == source_type && target_type.m_type_data->create_wrapper)
+        if (target_type.get_wrapped_type() == source_type && target_type.m_type_data->m_create_wrapper)
             return true;
     }
 
@@ -251,13 +277,15 @@ bool variant::can_convert(const type& target_type) const
     const bool target_is_arithmetic = target_type.is_arithmetic();
     const bool target_is_enumeration = target_type.is_enumeration();
     const type string_type = type::get<std::string>();
+    const type string_view_type = type::get<std::string_view>();
 
     return ((source_is_arithmetic && target_is_arithmetic) ||
             (source_is_arithmetic && target_type == string_type) ||
-            (source_type == string_type && target_is_arithmetic) ||
+            ((source_type == string_type || source_type == string_view_type) && target_is_arithmetic) ||
             (source_type.is_enumeration() && target_is_arithmetic) ||
             (source_is_arithmetic && target_is_enumeration) ||
-            (source_type == string_type && target_is_enumeration));
+            ((source_type == string_type || source_type == string_view_type) && target_is_enumeration) ||
+            (source_type == string_view_type && target_type == string_type));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -273,6 +301,7 @@ bool variant::convert(const type& target_type, variant& target_var) const
     const bool source_is_arithmetic = source_type.is_arithmetic();
     const bool target_is_arithmetic = target_type.is_arithmetic();
     const type string_type = type::get<std::string>();
+    const type string_view_type = type::get<std::string_view>();
     if (target_type == source_type)
     {
         target_var = *this;
@@ -292,9 +321,10 @@ bool variant::convert(const type& target_type, variant& target_var) const
     }
     else if ((source_is_arithmetic && target_is_arithmetic) ||
             (source_is_arithmetic && target_type == string_type) ||
-            (source_type == string_type && target_is_arithmetic) ||
+            ((source_type == string_type || source_type == string_view_type) && target_is_arithmetic) ||
             (source_type.is_enumeration() && target_is_arithmetic) ||
-            (source_type.is_enumeration() && target_type == string_type))
+            (source_type.is_enumeration() && target_type == string_type) ||
+            (source_type == string_view_type && target_type == string_type))
     {
         if (target_type == type::get<bool>())
         {
@@ -375,7 +405,7 @@ bool variant::convert(const type& target_type, variant& target_var) const
                 target_var = std::move(value);
         }
     }
-    else if ((source_is_arithmetic || source_type == string_type)
+    else if ((source_is_arithmetic || source_type == string_type || source_type == string_view_type)
              && target_type.is_enumeration())
     {
         variant var = target_type;

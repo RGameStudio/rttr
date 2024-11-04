@@ -40,8 +40,8 @@ struct method_query_test_base
     void func_1() {}
     static void func_2() {}
 
-    RTTR_ENABLE()
-
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_query_test_derived : method_query_test_base
@@ -51,7 +51,8 @@ struct method_query_test_derived : method_query_test_base
     void func_3() {}
     static void func_4() {}
 
-    RTTR_ENABLE(method_query_test_base)
+    RTTR_DECLARE_ANCESTORS(method_query_test_base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 

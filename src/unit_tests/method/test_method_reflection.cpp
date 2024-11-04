@@ -30,7 +30,6 @@
 #include <rttr/registration>
 
 using namespace rttr;
-using namespace std;
 
 #include <iostream>
 #include <memory>
@@ -84,9 +83,11 @@ struct derive_registered : base_not_registered
 
 struct derive_registered_with_base_class_list : base_not_registered
 {
-    RTTR_ENABLE() // but forgot the base class to insert in the macro
+    RTTR_DECLARE_ROOT() // but forgot the base class to insert in the macro
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
+inline static constexpr uint64_t c_tag_meta_key = rttr::hash_string("TAG");
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -117,7 +118,7 @@ RTTR_REGISTRATION
         .method("method_8", &method_test::method_8)
         (
             metadata(E_MetaData::SCRIPTABLE, true),
-            metadata("TAG",  42)
+            metadata(c_tag_meta_key,  42)
         )
         .method("method_9", &method_test::method_9)
         (
@@ -188,8 +189,8 @@ TEST_CASE("Test method", "[method]")
     variant inst = t_meth.create({});
     REQUIRE(inst.is_type<method_test*>() == true);
     method_test* null = nullptr; // workaround for catch compile error
-    REQUIRE(inst.get_value<method_test*>() != null);
-    method_test& obj = *inst.get_value<method_test*>();
+    REQUIRE(inst.get_value_unsafe<method_test*>() != null);
+    method_test& obj = *inst.get_value_unsafe<method_test*>();
 
     ////////////////////////////////////////////////////////////
     // invoke tests
@@ -226,9 +227,9 @@ TEST_CASE("Test method", "[method]")
     REQUIRE(obj.method_3_value == 42);
 
     ////////////////////////////////////////
-    t_meth.get_method("method_4").invoke(inst, string("test"));
+    t_meth.get_method("method_4").invoke(inst, std::string("test"));
     REQUIRE(obj.method_4_called == true);
-    string ref_for_method4;
+    std::string ref_for_method4;
     t_meth.get_method("method_4").invoke(inst, ref_for_method4);
     REQUIRE(ref_for_method4 == "Text Changed");
 
@@ -244,7 +245,7 @@ TEST_CASE("Test method", "[method]")
     ret = m5_overloaded_1.invoke(inst, &arg);
     REQUIRE(obj.method_5_called == true);
     REQUIRE(ret.is_type<int>() == true);
-    REQUIRE(ret.get_value<int>() == 42);
+    REQUIRE(ret.get_value_unsafe<int>() == 42);
     REQUIRE(arg == 22.0);
 
     ////////////////////////////////////////
@@ -252,7 +253,7 @@ TEST_CASE("Test method", "[method]")
     ret = m5_overloaded_1.invoke_variadic(inst, {&arg});
     REQUIRE(obj.method_5_called == true);
     REQUIRE(ret.is_type<int>() == true);
-    REQUIRE(ret.get_value<int>() == 42);
+    REQUIRE(ret.get_value_unsafe<int>() == 42);
     REQUIRE(arg == 22.0);
 
     method m5_overloaded_2 = t_meth.get_method("method_5", {type::get<int>(), type::get<double>()});
@@ -266,15 +267,15 @@ TEST_CASE("Test method", "[method]")
 
     ret = m6.invoke(inst);
     REQUIRE(obj.method_6_called == true);
-    REQUIRE(ret.is_type<string>() == true);
-    REQUIRE(ret.get_value<string>() == "Hello World");
+    REQUIRE(ret.is_type<std::string>() == true);
+    REQUIRE(ret.get_value_unsafe<std::string>() == "Hello World");
 
     ////////////////////////////////////////
     REQUIRE(t_meth.get_method("method_7").is_static() == true);
     ret = t_meth.get_method("method_7").invoke(instance(), 34.0);
     REQUIRE(obj.method_7_called == true);
     REQUIRE(ret.is_type<int>() == true);
-    REQUIRE(ret.get_value<int>() == 23);
+    REQUIRE(ret.get_value_unsafe<int>() == 23);
 
     ret = t_meth.get_method("method_8").invoke(inst);
     REQUIRE(obj.method_8_called == true);
@@ -310,7 +311,7 @@ TEST_CASE("Test method", "[method]")
     ////////////////////////////////////////////////////////////
     // check up_cast, cross cast and middle in the hierarchy cast through invoke
     method_test_final final_obj;
-    type t_final = type::get(final_obj);
+    type t_final = final_obj.get_type();
     REQUIRE(t_final.get_methods().size() == 22); // +1 overloaded
     // test the up cast
     t_final.get_method("method_3").invoke(final_obj, 1000);
@@ -395,7 +396,7 @@ TEST_CASE("ShortCut via type - method invoke", "[method]")
 TEST_CASE("Test method arrays", "[method]")
 {
     method_test obj;
-    method meth_array = type::get(obj).get_method("method_raw_array");
+    method meth_array = obj.get_type().get_method("method_raw_array");
     REQUIRE(meth_array.is_valid() == true);
 
     int raw_int_9[9];
@@ -418,9 +419,9 @@ TEST_CASE("Test method signature", "[method]")
     REQUIRE(methods.size() == 22);
 
     REQUIRE(methods[0].get_signature() ==  "method_1( )");
-    REQUIRE(methods[3].get_signature() ==  std::string("method_4( ") + type::get<std::string>().get_name() + " & )");
+    REQUIRE(methods[3].get_signature() ==  "method_4( " + std::string(type::get<std::string>().get_name()) + " & )");
     REQUIRE(methods[4].get_signature() ==  "method_5( double* )");
-    REQUIRE(methods[5].get_signature() ==  "method_5( int, double )");
+    REQUIRE(methods[5].get_signature() ==  "method_5( int32, double )");
     REQUIRE(methods[21].get_signature() == "method_13( )");
 }
 
@@ -429,7 +430,7 @@ TEST_CASE("Test method signature", "[method]")
 TEST_CASE("method policies", "[method]")
 {
     method_test obj;
-    type meth_type = type::get(obj);
+    type meth_type = obj.get_type();
     method m6_ptr = meth_type.get_method("method_6_ret_ptr");
     REQUIRE(m6_ptr.get_return_type() == type::get<const std::string*>());
     variant ret = m6_ptr.invoke(obj);
@@ -464,7 +465,7 @@ TEST_CASE("Invoke method via wrapper", "[method]")
     {
         std::shared_ptr<method_test> obj = std::make_shared<method_test>();
 
-        type obj_t = type::get(obj);
+        type obj_t = type::get<decltype(obj)>();
         REQUIRE(obj_t.is_wrapper() == true);
 
         type wrapper_t = obj_t.get_wrapped_type();
@@ -490,7 +491,7 @@ TEST_CASE("Invoke method via wrapper", "[method]")
         method m1 = wrapper_t.get_method("method_1");
 
         variant ret = m1.invoke(var);
-        CHECK(var.get_value<std::shared_ptr<method_test>>()->method_1_called == true);
+        CHECK(var.get_value_unsafe<std::shared_ptr<method_test>>()->method_1_called == true);
         CHECK(ret.is_valid() == true);
         CHECK(ret.is_type<void>() == true);
     }
@@ -500,7 +501,7 @@ TEST_CASE("Invoke method via wrapper", "[method]")
         method_test instance;
         std::reference_wrapper<method_test> obj = std::ref(instance);
 
-        type obj_t = type::get(obj);
+        type obj_t = type::get<decltype(obj)>();
         REQUIRE(obj_t.is_wrapper() == true);
 
         type wrapper_t = obj_t.get_wrapped_type();
@@ -590,11 +591,11 @@ TEST_CASE("Test method meta data", "[method]")
     method m8 = type::get<method_test_final>().get_method("method_8");
     variant value = m8.get_metadata(E_MetaData::SCRIPTABLE);
     REQUIRE(value.is_type<bool>() == true);
-    REQUIRE(value.get_value<bool>() == true);
+    REQUIRE(value.get_value_unsafe<bool>() == true);
     // string meta data
-    value = m8.get_metadata("TAG");
+    value = m8.get_metadata(c_tag_meta_key);
     REQUIRE(value.is_valid() == true);
-    REQUIRE(value.get_value<int>() == 42);
+    REQUIRE(value.get_value_unsafe<int>() == 42);
 
     // no meta data
     method m7 = type::get<method_test_final>().get_method("method_7");
@@ -605,7 +606,7 @@ TEST_CASE("Test method meta data", "[method]")
     method m9 = type::get<method_test_final>().get_method("method_9");
     value = m9.get_metadata(E_MetaData::SCRIPTABLE);
     REQUIRE(value.is_valid() == true);
-    REQUIRE(value.get_value<bool>() == false);
+    REQUIRE(value.get_value_unsafe<bool>() == false);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

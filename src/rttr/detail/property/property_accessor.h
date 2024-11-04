@@ -33,6 +33,19 @@ namespace rttr
 namespace detail
 {
 
+template<typename T>
+RTTR_CONSTEXPR RTTR_INLINE bool is_different(const T& left, const T& right)
+{
+    return &left != &right;
+}
+
+template<typename T, std::size_t N>
+RTTR_CONSTEXPR RTTR_INLINE bool is_different(const T (&left)[N], const T (&right)[N])
+{
+    return left != right;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // We have to use this property_accessor helper struct, because of a bug in MSVC compiler
 // "ambiguous call to overloaded function when using raw arrays"
@@ -40,9 +53,21 @@ namespace detail
 template<typename T>
 struct property_accessor
 {
-    static bool set_value(T& prop, const T& arg)
+    static bool set_value_copy(T& prop, const T& arg)
     {
-        prop = arg;
+        if (is_different(prop, arg))
+        {
+            prop = arg;
+        }
+        return true;
+    }
+
+    static bool set_value_move(T& prop, T&& arg)
+    {
+        if (is_different(prop, arg))
+        {
+            prop = std::move(arg);
+        }
         return true;
     }
 };
@@ -52,9 +77,21 @@ struct property_accessor
 template<typename T, std::size_t N>
 struct property_accessor<T[N]>
 {
-    static bool set_value(T (& target)[N], const T (& src)[N])
+    static bool set_value_copy(T (& target)[N], const T (& src)[N])
     {
-        copy_array(src, target);
+        if (is_different(target, src))
+        {
+            copy_array(src, target);
+        }
+        return true;
+    }
+
+    static bool set_value_move(T (& target)[N], T (&& src)[N])
+    {
+        if (target != src)
+        {
+            move_array(std::move(src), target);
+        }
         return true;
     }
 };
@@ -64,10 +101,21 @@ struct property_accessor<T[N]>
 template<typename T, std::size_t N>
 struct property_accessor<T(*)[N]>
 {
-
-    static bool set_value(T (*target)[N], const T (*src)[N])
+    static bool set_value_copy(T (*target)[N], const T (*src)[N])
     {
-        copy_array(src, target);
+        if (target != src)
+        {
+            copy_array(src, target);
+        }
+        return true;
+    }
+
+    static bool set_value_move(T (*target)[N], T (*src)[N])
+    {
+        if (target != src)
+        {
+            move_array(std::move(src), target);
+        }
         return true;
     }
 };

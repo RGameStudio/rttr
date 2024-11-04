@@ -28,6 +28,7 @@
 #include "rttr/method.h"
 
 #include "rttr/detail/method/method_wrapper_base.h"
+#include "rttr/hash_string_constexpr.h"
 #include "rttr/argument.h"
 #include "rttr/instance.h"
 
@@ -48,7 +49,7 @@ method create_item(const method_wrapper_base* wrapper)
 template<>
 method create_invalid_item()
 {
-    static const method_wrapper_base invalid_wrapper(string_view(), detail::get_invalid_type());
+    static const method_wrapper_base invalid_wrapper(std::string_view(), detail::get_invalid_type());
     return method(&invalid_wrapper);
 }
 
@@ -78,7 +79,7 @@ method::operator bool() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-string_view method::get_name() const RTTR_NOEXCEPT
+std::string_view method::get_name() const RTTR_NOEXCEPT
 {
     return m_wrapper->get_name();
 }
@@ -120,14 +121,14 @@ array_range<parameter_info> method::get_parameter_infos() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-string_view method::get_signature() const RTTR_NOEXCEPT
+std::string_view method::get_signature() const RTTR_NOEXCEPT
 {
     return m_wrapper->get_signature();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant method::get_metadata(const variant& key) const
+const variant& method::get_metadata(uint64_t key) const
 {
     return m_wrapper->get_metadata(key);
 }

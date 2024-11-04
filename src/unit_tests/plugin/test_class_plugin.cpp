@@ -61,7 +61,8 @@ struct derived_plugin_class : base_test_class
 
     int value;
 
-    RTTR_ENABLE(base_test_class)
+    RTTR_DECLARE_ANCESTORS(base_test_class)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 RTTR_PLUGIN_REGISTRATION

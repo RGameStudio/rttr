@@ -34,7 +34,6 @@
 #include <string>
 
 using namespace rttr;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -388,6 +387,179 @@ TEST_CASE("variant_associative_view::insert", "[variant_associative_view]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant_associative_view::insert_move", "[variant_associative_view]")
+{
+    SECTION("valid test - std::set")
+    {
+        auto set = std::set<std::string>();
+        variant var = set;
+        variant_associative_view view = var.create_associative_view();
+        REQUIRE(view.is_valid() == true);
+
+        auto ret = view.insert_move(1);
+        CHECK(ret.first == view.end());
+        CHECK(ret.second == false);
+
+        ret = view.insert_move(std::string("one"));
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "one");
+        CHECK(ret.first.get_value().is_valid() == false);
+        CHECK(ret.second == true);
+
+        std::string v = "two";
+        ret = view.insert_move(std::move(v));
+        CHECK(v.empty());
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "two");
+        CHECK(ret.first.get_value().is_valid() == false);
+        CHECK(ret.second == true);
+    }
+
+    SECTION("valid test - std::set<variant>")
+    {
+        auto set = std::set<variant>();
+        variant var = set;
+        variant_associative_view view = var.create_associative_view();
+        REQUIRE(view.is_valid() == true);
+
+        variant k = 1;
+        auto ret = view.insert_move(std::move(k));
+        CHECK(!k);
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_int() == 1);
+        CHECK(ret.first.get_value().is_valid() == false);
+        CHECK(ret.second == true);
+
+        k = std::string("one");
+        ret = view.insert_move(std::move(k));
+        CHECK(!k);
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "one");
+        CHECK(ret.first.get_value().is_valid() == false);
+        CHECK(ret.second == true);
+    }
+
+    SECTION("valid test - std::map")
+    {
+        auto map = std::map<std::string, std::string>();
+        variant var = map;
+        variant_associative_view view = var.create_associative_view();
+        REQUIRE(view.is_valid() == true);
+
+        auto ret = view.insert_move(std::string("foo"), std::string("one"));
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "foo");
+        CHECK(ret.first.get_value().to_string() == "one");
+        CHECK(ret.second == true);
+
+        ret = view.insert_move(std::make_pair(std::string("one"), 1));
+        CHECK(ret.first == view.end());
+        CHECK(ret.second == false);
+
+        std::string k = "bar", v = "two";
+        ret = view.insert_move(std::move(k), std::move(v));
+        CHECK(k.empty());
+        CHECK(v.empty());
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "bar");
+        CHECK(ret.first.get_value().to_string() == "two");
+        CHECK(ret.second == true);
+    }
+
+    SECTION("valid test - std::map<variant, V>")
+    {
+        auto map = std::map<variant, std::string>();
+        variant var = map;
+        variant_associative_view view = var.create_associative_view();
+        REQUIRE(view.is_valid() == true);
+
+        variant k = std::string("foo");
+        std::string v = "one";
+        auto ret = view.insert_move(std::move(k), std::move(v));
+        CHECK(!k);
+        CHECK(v.empty());
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "foo");
+        CHECK(ret.first.get_value().to_string() == "one");
+        CHECK(ret.second == true);
+
+        ret = view.insert_move(variant(42), std::string("two"));
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_int() == 42);
+        CHECK(ret.first.get_value().to_string() == "two");
+        CHECK(ret.second == true);
+    }
+
+    SECTION("valid test - std::map<K, variant>")
+    {
+        auto map = std::map<std::string, variant>();
+        variant var = map;
+        variant_associative_view view = var.create_associative_view();
+        REQUIRE(view.is_valid() == true);
+
+        std::string k = "foo";
+        variant v = std::string("one");
+        auto ret = view.insert_move(std::move(k), std::move(v));
+        CHECK(k.empty());
+        CHECK(!v);
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "foo");
+        CHECK(ret.first.get_value().to_string() == "one");
+        CHECK(ret.second == true);
+
+        ret = view.insert_move(std::string("bar"), variant(42));
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "bar");
+        CHECK(ret.first.get_value().to_int() == 42);
+        CHECK(ret.second == true);
+    }
+
+    SECTION("valid test - std::map<variant, variant>")
+    {
+        auto map = std::map<variant, variant>();
+        variant var = map;
+        variant_associative_view view = var.create_associative_view();
+        REQUIRE(view.is_valid() == true);
+
+        variant k = std::string("foo"), v = std::string("one");
+        auto ret = view.insert_move(std::move(k), std::move(v));
+        CHECK(!k);
+        CHECK(!v);
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_string() == "foo");
+        CHECK(ret.first.get_value().to_string() == "one");
+        CHECK(ret.second == true);
+
+        ret = view.insert_move(variant(123), variant(42));
+        REQUIRE(ret.first != view.end());
+        CHECK(ret.first.get_key().to_int() == 123);
+        CHECK(ret.first.get_value().to_int() == 42);
+        CHECK(ret.second == true);
+    }
+
+    SECTION("invalid test")
+    {
+        {
+            variant var;
+            auto view = var.create_associative_view();
+            auto ret = view.insert_move(2);
+
+            CHECK(ret.first == view.end());
+            CHECK(ret.second == false);
+        }
+        {
+            auto map = std::map<int, std::string>();
+            variant var = map;
+            auto map_view = var.create_associative_view();
+
+            auto ret = map_view.insert_move(23);
+            CHECK(ret.first == map_view.end());
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant_associative_view::find", "[variant_associative_view]")
 {
     SECTION("valid test")
@@ -631,6 +803,19 @@ TEST_CASE("variant_associative_view::begin/end", "[variant_associative_view]")
 
         CHECK(view.begin() == view.end());
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("variant_associative_view::reserve", "[variant_associative_view]")
+{
+    std::unordered_map<size_t, size_t> map;
+    variant var = std::ref(map);
+    variant_associative_view view = var.create_associative_view();
+
+    view.reserve(20);
+
+    CHECK(map.bucket_count() >= 20);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -39,6 +39,8 @@ struct method_access_level_test
     void default_method(int value = 23) {}
 };
 
+inline static constexpr uint64_t c_23_meta_key = rttr::hash_string("23");
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_REGISTRATION
@@ -51,19 +53,19 @@ RTTR_REGISTRATION
         // method with metadata
         .method("method_5", &method_access_level_test::method_1) // default with custom data, should be "public_access"
         (
-            metadata("23", 43)
+            metadata(c_23_meta_key, 43)
         )
         .method("method_6", &method_access_level_test::method_2, registration::private_access)
         (
-            metadata("23", 43)
+            metadata(c_23_meta_key, 43)
         )
         .method("method_7", &method_access_level_test::method_3, registration::protected_access)
         (
-            metadata("23", 43)
+            metadata(c_23_meta_key, 43)
         )
         .method("method_8", &method_access_level_test::method_3, registration::public_access)
         (
-            metadata("23", 43)
+            metadata(c_23_meta_key, 43)
         )
         .method("default_method", &method_access_level_test::default_method, registration::public_access)
         (

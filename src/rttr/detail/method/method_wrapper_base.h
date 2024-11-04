@@ -35,9 +35,9 @@
 #include "rttr/array_range.h"
 #include "rttr/parameter_info.h"
 #include "rttr/access_levels.h"
-#include "rttr/string_view.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace rttr
@@ -60,21 +60,21 @@ namespace detail
 class RTTR_API method_wrapper_base
 {
     public:
-        method_wrapper_base(string_view name, type declaring_type) RTTR_NOEXCEPT;
+        method_wrapper_base(std::string_view name, type declaring_type) RTTR_NOEXCEPT;
         virtual ~method_wrapper_base();
 
-        string_view get_name() const RTTR_NOEXCEPT;
+        std::string_view get_name() const RTTR_NOEXCEPT;
         type get_declaring_type() const RTTR_NOEXCEPT;
 
         virtual bool is_valid() const RTTR_NOEXCEPT;
-        virtual string_view get_signature() const RTTR_NOEXCEPT;
+        virtual std::string_view get_signature() const RTTR_NOEXCEPT;
         virtual access_levels get_access_level() const RTTR_NOEXCEPT;
         virtual type get_return_type() const RTTR_NOEXCEPT;
         virtual bool is_static() const RTTR_NOEXCEPT;
         virtual std::vector<bool> get_is_reference() const RTTR_NOEXCEPT;
         virtual std::vector<bool> get_is_const() const RTTR_NOEXCEPT;
         virtual array_range<parameter_info> get_parameter_infos() const RTTR_NOEXCEPT;
-        virtual variant get_metadata(const variant& key) const;
+        virtual const variant& get_metadata(uint64_t key) const;
 
         virtual variant invoke(instance& object) const;
         virtual variant invoke(instance& object, argument& arg1) const;
@@ -96,10 +96,10 @@ class RTTR_API method_wrapper_base
         void create_signature_string() RTTR_NOEXCEPT;
 
     private:
-        string_view m_name;
-        string_view m_signature_view;
-        type        m_declaring_type;
-        std::string m_signature;
+        std::string_view m_name;
+        std::string_view m_signature_view;
+        type             m_declaring_type;
+        std::string      m_signature;
 };
 
 } // end namespace detail

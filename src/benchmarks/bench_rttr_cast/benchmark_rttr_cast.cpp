@@ -979,23 +979,23 @@ void bench_type_get_vs_typeid()
         const auto startTime = chrono::high_resolution_clock::now();
         for (std::size_t i = 0; i < vec.size(); ++i)
         {
-            if (type::get<ClassSingle6A>() == type::get(*vec[i]))
+            if (type::get<ClassSingle6A>() == vec[i]->get_type())
             {
                 result[i] = vec[i]->get_ptr();
             }
-            else if (type::get<ClassSingle6B>() == type::get(*vec[i]))
+            else if (type::get<ClassSingle6B>() == vec[i]->get_type())
             {
                 result[i] = vec[i]->get_ptr();
             }
-            else if (type::get<ClassSingle6C>() == type::get(*vec[i]))
+            else if (type::get<ClassSingle6C>() == vec[i]->get_type())
             {
                 result[i] = vec[i]->get_ptr();
             }
-            else if (type::get<ClassSingle6D>() == type::get(*vec[i]))
+            else if (type::get<ClassSingle6D>() == vec[i]->get_type())
             {
                 result[i] = vec[i]->get_ptr();
             }
-            else if (type::get<ClassSingle6E>() == type::get(*vec[i]))
+            else if (type::get<ClassSingle6E>() == vec[i]->get_type())
             {
                 result[i] = vec[i]->get_ptr();
             }

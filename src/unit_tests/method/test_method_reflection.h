@@ -92,7 +92,8 @@ struct method_test
     void(*m_func_ptr)(int)          = nullptr;
     mutable bool method_with_noexpcet_called= false;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_test_derived : method_test
@@ -104,7 +105,8 @@ struct method_test_derived : method_test
     bool method_8_derived_called    = false;
     bool method_11_derived_called   = false;
 
-    RTTR_ENABLE(method_test)
+    RTTR_DECLARE_ANCESTORS(method_test)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_test_right
@@ -113,7 +115,8 @@ struct method_test_right
     void method_12()                { method_12_right_called = true;}
 
     bool method_12_right_called   = false;
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_test_final : method_test_derived, method_test_right
@@ -123,7 +126,8 @@ struct method_test_final : method_test_derived, method_test_right
 
     bool method_13_final_called    = false;
 
-    RTTR_ENABLE(method_test_derived, method_test_right)
+    RTTR_DECLARE_ANCESTORS(method_test_derived, method_test_right)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 #endif // TEST_METHOD_REFLECTION_H_

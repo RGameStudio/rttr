@@ -34,7 +34,6 @@
 #include <string>
 
 using namespace rttr;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -462,10 +461,8 @@ TEST_CASE("variant_sequential_view::set_size()", "[variant_sequential_view]")
         CHECK(view.get_size() == 0);
         CHECK(view.set_size(2) == true);
         CHECK(view.get_size() == 2);
-        auto itr = view.begin();
 
-        REQUIRE(itr != view.end());
-        auto sub_view = itr.get_data().create_sequential_view();
+        auto sub_view = view.get_value(0).create_sequential_view();
         CHECK(sub_view.is_valid() == true);
         CHECK(sub_view.get_size() == 0);
         CHECK(sub_view.set_size(10) == true);
@@ -558,6 +555,30 @@ TEST_CASE("variant_sequential_view::insert()", "[variant_sequential_view]")
 
         auto itr = view.insert(view.begin(), 3);
         CHECK(itr == view.end());
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("variant_sequential_view::insert_move()", "[variant_sequential_view]")
+{
+    SECTION("std::vector")
+    {
+        variant var = std::vector<std::string>();
+        auto view = var.create_sequential_view();
+        CHECK(view.get_size() == 0);
+
+        auto itr = view.insert_move(view.begin(), std::string("foo"));
+        CHECK(itr != view.end());
+
+        std::string v = "bar";
+        itr = view.insert_move(view.begin(), v);
+        CHECK(itr != view.end());
+        CHECK(v.empty());
+
+        CHECK(view.get_size() == 2);
+        CHECK(view.get_value(0).to_string() == "bar");
+        CHECK(view.get_value(1).to_string() == "foo");
     }
 }
 
@@ -779,6 +800,67 @@ TEST_CASE("variant_sequential_view::set_value()", "[variant_sequential_view]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant_sequential_view::set_value_move()", "[variant_sequential_view]")
+{
+    SECTION("std::vector")
+    {
+        variant var = std::vector<std::string>({ {}, {} });
+        auto view = var.create_sequential_view();
+        REQUIRE(view.get_size() == 2);
+
+        std::string val = "foo";
+        CHECK(view.set_value_move(0, std::move(val)) == true);
+        CHECK(val.empty());
+
+        rttr::variant varval = std::string("bar");
+        CHECK(view.set_value_move(1, std::move(varval)) == true);
+        CHECK(varval.get_value_unsafe<std::string>().empty());
+
+        CHECK(view.set_value_move(0, 42) == false);
+        CHECK(view.set_value_move(2, "baz") == false);
+
+        CHECK(view.get_value(0).to_string() == "foo");
+        CHECK(view.get_value(1).to_string() == "bar");
+    }
+
+    SECTION("std::vector<variant>")
+    {
+        variant var = std::vector<variant>({ {}, {} });
+        auto view = var.create_sequential_view();
+        REQUIRE(view.get_size() == 2);
+
+        rttr::variant val = std::string("foo");
+        CHECK(view.set_value_move(0, std::move(val)) == true);
+        CHECK(!val);
+
+        CHECK(view.set_value_move(1, rttr::variant(42)) == true);
+
+        CHECK(view.get_value(0).to_string() == "foo");
+        CHECK(view.get_value(1).to_int() == 42);
+    }
+
+    SECTION("raw array")
+    {
+        std::string vals[2][2] = {};
+
+        variant var = &vals;
+        auto view = var.create_sequential_view();
+        REQUIRE(view.get_size() == 2);
+
+        std::string newVals[2] = { "foo", "bar" };
+        CHECK(view.set_value_move(1, newVals) == true);
+        CHECK(newVals[0].empty());
+
+        auto sub_view_1 = view.get_value(0).create_sequential_view();
+        auto sub_view_2 = view.get_value(1).create_sequential_view();
+        CHECK(sub_view_1.get_value(0).to_string() == "");
+        CHECK(sub_view_2.get_value(0).to_string() == "foo");
+    }
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant_sequential_view::get_value()", "[variant_sequential_view]")
 {
     SECTION("std::vector")
@@ -921,6 +1003,19 @@ TEST_CASE("variant_sequential_view::begin/end", "[variant_sequential_view]")
 
         CHECK(view.begin() == view.end());
     }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("variant_sequential_view::reserve", "[variant_sequential_view]")
+{
+    std::vector<size_t> vec;
+    variant var = std::ref(vec);
+    variant_sequential_view view = var.create_sequential_view();
+
+    view.reserve(20);
+
+    CHECK(vec.capacity() >= 20);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

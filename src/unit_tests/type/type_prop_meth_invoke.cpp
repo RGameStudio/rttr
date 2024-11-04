@@ -32,14 +32,16 @@ struct type_prop_invoke_test_base
 {
     int p1 = 12;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct type_prop_invoke_test : type_prop_invoke_test_base
 {
     std::string p2 = "text";
 
-    RTTR_ENABLE(type_prop_invoke_test_base)
+    RTTR_DECLARE_ANCESTORS(type_prop_invoke_test_base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 static int g_prop_invoke = 42;
@@ -65,11 +67,11 @@ TEST_CASE("Test property shortcuts to set/get property", "[property]")
     SECTION("test set property with instance")
     {
         type_prop_invoke_test_base obj;
-        variant var = type::get(obj).get_property_value("p1", obj);
-        REQUIRE(var.is_type<int>() == true);
-        CHECK(var.get_value<int>() == 12);
+        variant var = obj.get_type().get_property_value("p1", obj);
+        REQUIRE(var.is_type<std::reference_wrapper<int>>() == true);
+        CHECK(var.get_value_unsafe<std::reference_wrapper<int>>().get() == 12);
 
-        bool success = type::get(obj).set_property_value("p1", obj, 500);
+        bool success = obj.get_type().set_property_value("p1", obj, 500);
         CHECK(success == true);
         CHECK(obj.p1 == 500);
     }
@@ -79,11 +81,11 @@ TEST_CASE("Test property shortcuts to set/get property", "[property]")
         // derived obj
         type_prop_invoke_test obj;
 
-        variant var = type::get(obj).get_property_value("p2", obj);
-        REQUIRE(var.is_type<std::string>() == true);
-        CHECK(var.get_value<std::string>() == "text");
+        variant var = obj.get_type().get_property_value("p2", obj);
+        REQUIRE(var.is_type<std::reference_wrapper<std::string>>() == true);
+        CHECK(var.get_value_unsafe<std::reference_wrapper<std::string>>().get() == "text");
 
-        bool success = type::get(obj).set_property_value("p2", obj, std::string("Hello World"));
+        bool success = obj.get_type().set_property_value("p2", obj, std::string("Hello World"));
         CHECK(success == true);
         CHECK(obj.p2 == "Hello World");
     }
@@ -94,8 +96,8 @@ TEST_CASE("Test property shortcuts to set/get property", "[property]")
         CHECK(success == true);
 
         variant var = type::get_property_value("g_prop_invoke");
-        REQUIRE(var.is_type<int>() == true);
-        CHECK(var.get_value<int>() == 23);
+        REQUIRE(var.is_type<std::reference_wrapper<int>>() == true);
+        CHECK(var.get_value_unsafe<std::reference_wrapper<int>>().get() == 23);
     }
 }
 

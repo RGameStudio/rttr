@@ -64,7 +64,7 @@ class constructor;
  * 5. `void visitor::visit_method(const method_info<T>& info);`
  * 6. `void visitor::visit_global_method(const method_info<T>& info);`
  *
- * and add the macro `RTTR_ENABLE(visitor);` in the class body.
+ * and add macros `RTTR_DECLARE_ANCESTORS(visitor)` and `RTTR_ENABLE_OBJECT_INFO()` in the class body.
  *
  * Using a visitor
  * ---------------
@@ -495,7 +495,8 @@ private:
     void visit_impl(const type& t);
 
 private:
-    RTTR_ENABLE();
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 } // end namespace rttr

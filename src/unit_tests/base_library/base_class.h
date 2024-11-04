@@ -37,6 +37,6 @@ public:
     base_test_class()
     {}
 
-    RTTR_ENABLE()
-
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };

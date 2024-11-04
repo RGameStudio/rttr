@@ -63,9 +63,12 @@ class RTTR_LOCAL variant_sequential_view_private
             m_advance_func(sequential_container_empty::advance),
             m_erase_func(sequential_container_empty::erase),
             m_clear_func(sequential_container_empty::clear),
-            m_insert_func(sequential_container_empty::insert),
-            m_set_value_func(sequential_container_empty::set_value),
-            m_get_value_func(sequential_container_empty::get_value)
+            m_insert_copy_func(sequential_container_empty::insert),
+            m_insert_move_func(sequential_container_empty::insert),
+            m_set_value_copy_func(sequential_container_empty::set_value),
+            m_set_value_move_func(sequential_container_empty::set_value),
+            m_get_value_func(sequential_container_empty::get_value),
+            m_reserve_func(sequential_container_empty::reserve)
         {
         }
 
@@ -89,9 +92,12 @@ class RTTR_LOCAL variant_sequential_view_private
             m_advance_func(sequential_container_mapper_wrapper<RawType, ConstType>::advance),
             m_erase_func(sequential_container_mapper_wrapper<RawType, ConstType>::erase),
             m_clear_func(sequential_container_mapper_wrapper<RawType, ConstType>::clear),
-            m_insert_func(sequential_container_mapper_wrapper<RawType, ConstType>::insert),
-            m_set_value_func(sequential_container_mapper_wrapper<RawType, ConstType>::set_value),
-            m_get_value_func(sequential_container_mapper_wrapper<RawType, ConstType>::get_value)
+            m_insert_copy_func(sequential_container_mapper_wrapper<RawType, ConstType>::template insert<false>),
+            m_insert_move_func(sequential_container_mapper_wrapper<RawType, ConstType>::template insert<true>),
+            m_set_value_copy_func(sequential_container_mapper_wrapper<RawType, ConstType>::template set_value<false>),
+            m_set_value_move_func(sequential_container_mapper_wrapper<RawType, ConstType>::template set_value<true>),
+            m_get_value_func(sequential_container_mapper_wrapper<RawType, ConstType>::get_value),
+            m_reserve_func(sequential_container_mapper_wrapper<RawType, ConstType>::reserve)
         {
         }
 
@@ -188,19 +194,34 @@ class RTTR_LOCAL variant_sequential_view_private
             m_erase_func(m_container, itr_pos, itr);
         }
 
-        RTTR_INLINE void insert(const iterator_data& itr_pos, argument& value, iterator_data& itr)
+        RTTR_INLINE void insert_copy(const iterator_data& itr_pos, argument& value, iterator_data& itr)
         {
-            m_insert_func(m_container, value, itr_pos, itr);
+            m_insert_copy_func(m_container, value, itr_pos, itr);
         }
 
-        RTTR_INLINE bool set_value(std::size_t index, argument& arg)
+        RTTR_INLINE void insert_move(const iterator_data& itr_pos, argument& value, iterator_data& itr)
         {
-            return m_set_value_func(m_container, index, arg);
+            m_insert_move_func(m_container, value, itr_pos, itr);
+        }
+
+        RTTR_INLINE bool set_value_copy(std::size_t index, argument& arg)
+        {
+            return m_set_value_copy_func(m_container, index, arg);
+        }
+
+        RTTR_INLINE bool set_value_move(std::size_t index, argument& arg)
+        {
+            return m_set_value_move_func(m_container, index, arg);
         }
 
         RTTR_INLINE variant get_value(std::size_t index) const
         {
             return m_get_value_func(m_container, index);
+        }
+
+        RTTR_INLINE void reserve(std::size_t n)
+        {
+            m_reserve_func(m_container, n);
         }
 
     private:
@@ -225,6 +246,8 @@ class RTTR_LOCAL variant_sequential_view_private
         using set_value_func    = bool(*)(void* container, std::size_t index, argument& arg);
         using get_value_func    = variant(*)(void* container, std::size_t index);
 
+        using reserve_func      = void(*)(void* container, std::size_t n);
+
         type                    m_type;
         type                    m_value_type;
         void*                   m_container;
@@ -243,9 +266,12 @@ class RTTR_LOCAL variant_sequential_view_private
         advance_func            m_advance_func;
         erase_func              m_erase_func;
         clear_func              m_clear_func;
-        insert_func             m_insert_func;
-        set_value_func          m_set_value_func;
+        insert_func             m_insert_copy_func;
+        insert_func             m_insert_move_func;
+        set_value_func          m_set_value_copy_func;
+        set_value_func          m_set_value_move_func;
         get_value_func          m_get_value_func;
+        reserve_func            m_reserve_func;
 };
 
 } // end namespace detail

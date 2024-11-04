@@ -5,23 +5,23 @@ Within the current C++ standard it is not possible to extract a class hierarchy 
 Therefore the programmer has to put a certain macro inside every class in order to provide this information. 
 Additionally this macro will be needed to retrieve the information about the most derived [type](@ref rttr::type) of a current instance.
 
-The macro you have to insert in the class declaration is named: @ref RTTR_ENABLE()
+Macros you have to insert in the class declaration are named: @ref RTTR_DECLARE_ROOT() or @ref RTTR_DECLARE_ANCESTORS()
 
 Suppose we have a base struct called `Base`:
 ~~~~{.cpp}
 struct Base
 {
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
 };
 ~~~~
-Place the macro \ref RTTR_ENABLE() somewhere in the class, it doesn't matter if its under the public, protected or private class accessor section.
+Place the macro \ref RTTR_DECLARE_ROOT() somewhere in the class, it doesn't matter if its under the public, protected or private class accessor section.
 
-Into the derived class you put the same macro, but now as argument the name of the parent class.
+Into the derived class you put \ref RTTR_DECLARE_ANCESTORS() macro, with the name of the parent class as argument.
 Which is in this case `Base`.
 ~~~~{.cpp}
 struct Derived : Base
 {
-    RTTR_ENABLE(Base)
+    RTTR_DECLARE_ANCESTORS(Base)
 };
 ~~~~
 
@@ -29,7 +29,7 @@ When you use multiple inheritance you simply separate every class with a comma.
 ~~~~{.cpp}
 struct MultipleDerived : Base, Other
 {
-    RTTR_ENABLE(Base, Other)
+    RTTR_DECLARE_ANCESTORS(Base, Other)
 };
 ~~~~
 Remark that the order in which you declare here the multiple inheritance, has an impact later when retrieving properties of a class.
@@ -43,8 +43,8 @@ How this will be done, is discussed in the [next](@ref rttr_type_rttr_cast_page 
 
 Summary
 -------
-- to retrieve meta information of derived and base classes or using @ref rttr::rttr_cast "rttr_cast",
-  it is necessary to place the macro: @ref RTTR_ENABLE() inside every class declaration
+- to retrieve meta information of derived and base classes it is necessary to place macros @ref RTTR_DECLARE_ROOT()
+  or @ref RTTR_DECLARE_ANCESTORS() inside every class declaration
 - the macro is **not** needed when working with classes which will be not inherited, e.g. POD classes
 
 <hr>

@@ -133,7 +133,7 @@ std::pair<variant_associative_view::const_iterator, bool> variant_associative_vi
 {
     const_iterator itr(&m_view);
 
-    auto success = m_view.insert(key, itr.m_itr);
+    auto success = m_view.insert_copy(key, itr.m_itr);
 
     return {itr, success};
 }
@@ -144,9 +144,31 @@ std::pair<variant_associative_view::const_iterator, bool> variant_associative_vi
 {
     const_iterator itr(&m_view);
 
-    auto success = m_view.insert(key, value, itr.m_itr);
+    auto success = m_view.insert_copy(key, value, itr.m_itr);
 
     return {itr, success};
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+std::pair<variant_associative_view::const_iterator, bool> variant_associative_view::insert_move(argument key)
+{
+    const_iterator itr(&m_view);
+
+    auto success = m_view.insert_move(key, itr.m_itr);
+
+    return { itr, success };
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+std::pair<variant_associative_view::const_iterator, bool> variant_associative_view::insert_move(argument key, argument value)
+{
+    const_iterator itr(&m_view);
+
+    auto success = m_view.insert_move(key, value, itr.m_itr);
+
+    return { itr, success };
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -208,6 +230,14 @@ variant_associative_view::const_iterator variant_associative_view::end() const
     m_view.end(itr.m_itr);
 
     return itr;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void variant_associative_view::reserve(size_t n)
+{
+    m_view.reserve(n);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

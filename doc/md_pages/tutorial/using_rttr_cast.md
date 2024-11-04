@@ -14,9 +14,9 @@ cross casts between unrelated classes and even class hierarchies with virtual in
 The target type `T` can be also in the middle of the hierarchy.
 
 ~~~~{.cpp}
-struct A { RTTR_ENABLE() };
-struct B : A { RTTR_ENABLE(A) };
-struct C : B { RTTR_ENABLE(B) };
+struct A { RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() };
+struct B : A { RTTR_DECLARE_ANCESTORS(A) RTTR_ENABLE_OBJECT_INFO() };
+struct C : B { RTTR_DECLARE_ANCESTORS(B) RTTR_ENABLE_OBJECT_INFO()};
 C c;
 A* a = &c;
 B* b = rttr_cast<B*>(a); // successful
@@ -25,15 +25,15 @@ B* b = rttr_cast<B*>(a); // successful
 Cross casts are also possible:
 
 ~~~~{.cpp}
-struct A { RTTR_ENABLE() };
-struct B { RTTR_ENABLE() };
-struct C : A , B { RTTR_ENABLE(A, B) };
+struct A { RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() };
+struct B { RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() };
+struct C : A , B { RTTR_DECLARE_ANCESTORS(A, B) RTTR_ENABLE_OBJECT_INFO() };
 C c;
 A* a = &c;
 B* b = rttr_cast<B*>(a); // successful; remark that class A and B are unrelated from each other
 ~~~~
 
-A [type](@ref rttr::type) object knows from which parent class it is derived. Assumed this information is given via @ref RTTR_ENABLE.
+A [type](@ref rttr::type) object knows from which parent class it is derived. Assumed this information is given via @ref RTTR_DECLARE_ANCESTORS.
 
 @remark Because exception are not supported the target type `T` can only be a pointer type.
 
@@ -43,4 +43,4 @@ Summary
 
 <hr>
 
-<div class="btn btn-default doxy-button">[previous](@ref rttr_type_class_hierachy_page "Using RTTR_ENABLE")</div><div class="btn btn-default doxy-button">[next](@ref tutorial_page "Tutorial page")</div>
+<div class="btn btn-default doxy-button">[previous](@ref rttr_type_class_hierachy_page "Register Class Hierarchy")</div><div class="btn btn-default doxy-button">[next](@ref tutorial_page "Tutorial page")</div>

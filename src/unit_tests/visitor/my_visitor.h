@@ -179,7 +179,8 @@ public:
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    RTTR_ENABLE(visitor)
+    RTTR_DECLARE_ANCESTORS(visitor)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 

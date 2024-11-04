@@ -31,22 +31,22 @@
 #include <rttr/type>
 
 #define CLASS(CLASS_NAME) struct CLASS_NAME \
-{ virtual ~CLASS_NAME() {} RTTR_ENABLE() virtual int getType() { return dummyIntValue; } int dummyIntValue; };
+{ virtual ~CLASS_NAME() {} RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() virtual int getType() { return dummyIntValue; } int dummyIntValue; };
 
 #define CLASS_INHERIT(CLASS1, CLASS2) struct CLASS1 : CLASS2 \
-{ virtual int getType() { return static_cast<int>(dummyDoubleValue); } RTTR_ENABLE(CLASS2) double dummyDoubleValue; };
+{ virtual int getType() { return static_cast<int>(dummyDoubleValue); } RTTR_DECLARE_ANCESTORS(CLASS2) RTTR_ENABLE_OBJECT_INFO() double dummyDoubleValue; };
 
 #define CLASS_VIRTUAL_INHERIT(CLASS1, CLASS2) struct CLASS1 : virtual CLASS2 \
-{ virtual int getType() { return static_cast<int>(dummyDoubleValue); } RTTR_ENABLE(CLASS2) double dummyDoubleValue; };
+{ virtual int getType() { return static_cast<int>(dummyDoubleValue); } RTTR_DECLARE_ANCESTORS(CLASS2) RTTR_ENABLE_OBJECT_INFO() double dummyDoubleValue; };
 
 #define CLASS_MULTI_INHERIT_2(CLASS1, CLASS2, CLASS3) struct CLASS1 : CLASS2, CLASS3 \
-{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_ENABLE(CLASS2, CLASS3) bool dummyBoolValue; };
+{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_DECLARE_ANCESTORS(CLASS2, CLASS3) RTTR_ENABLE_OBJECT_INFO() bool dummyBoolValue; };
 
 #define CLASS_MULTI_INHERIT_3(CLASS1, CLASS2, CLASS3, CLASS4) struct CLASS1 : CLASS2, CLASS3, CLASS4 \
-{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_ENABLE(CLASS2, CLASS3, CLASS4) bool dummyBoolValue; };
+{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_DECLARE_ANCESTORS(CLASS2, CLASS3, CLASS4) RTTR_ENABLE_OBJECT_INFO() bool dummyBoolValue; };
 
 #define CLASS_MULTI_INHERIT_5(CLASS1, CLASS2, CLASS3, CLASS4, CLASS5, CLASS6) struct CLASS1 : CLASS2, CLASS3, CLASS4, CLASS5, CLASS6 \
-{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_ENABLE(CLASS2, CLASS3, CLASS4, CLASS5, CLASS6) bool dummyBoolValue; };
+{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_DECLARE_ANCESTORS(CLASS2, CLASS3, CLASS4, CLASS5, CLASS6) RTTR_ENABLE_OBJECT_INFO() bool dummyBoolValue; };
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // The following class structures has 7 hierarchy levels and is 5 classes wide;

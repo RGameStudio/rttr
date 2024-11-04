@@ -78,21 +78,24 @@ struct base
 {
     virtual ~base() {};
     int dummy;
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct derived : virtual base
 {
     virtual ~derived() {};
     double dummy2;
-    RTTR_ENABLE(base)
+    RTTR_DECLARE_ANCESTORS(base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct other_derived : virtual base
 {
     virtual ~other_derived() {};
     double dummy3;
-    RTTR_ENABLE(base)
+    RTTR_DECLARE_ANCESTORS(base)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 enum class test_enum
@@ -136,13 +139,13 @@ TEST_CASE("variant conversion - to int", "[variant]")
         CHECK(var.to_int() == 12);
         CHECK(var.convert<int>() == 12);
         CHECK(var.convert(type::get<int>()) == true);
-        CHECK(var.get_value<int>() == 12);
+        CHECK(var.get_value_unsafe<int>() == 12);
 
         var = -23;
         CHECK(var.to_int() == -23);
         CHECK(var.convert<int>() == -23);
         CHECK(var.convert(type::get<int>()) == true);
-        CHECK(var.get_value<int>() == -23);
+        CHECK(var.get_value_unsafe<int>() == -23);
     }
 
     SECTION("char to int")
@@ -155,7 +158,7 @@ TEST_CASE("variant conversion - to int", "[variant]")
         CHECK(var.to_int() == 23);
         CHECK(var.convert<int>() == 23);
         CHECK(var.convert(type::get<int>()) == true);
-        CHECK(var.get_value<int>() == 23);
+        CHECK(var.get_value_unsafe<int>() == 23);
 
         var = "-12";
         CHECK(var.to_int() == -12);
@@ -182,7 +185,7 @@ TEST_CASE("variant conversion - to int", "[variant]")
         CHECK(var.to_int() == 23);
         CHECK(var.convert<int>() == 23);
         CHECK(var.convert(type::get<int>()) == true);
-        CHECK(var.get_value<int>() == 23);
+        CHECK(var.get_value_unsafe<int>() == 23);
 
         var = std::string("-12");
         CHECK(var.to_int() == -12);
@@ -254,7 +257,7 @@ TEST_CASE("variant conversion - to std::string", "[variant]")
         CHECK(var.to_string() == "12");
         CHECK(var.convert<std::string>() == "12");
         CHECK(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "12");
+        CHECK(var.get_value_unsafe<std::string>() == "12");
 
         var = -23;
         CHECK(var.to_string() == "-23");
@@ -355,7 +358,7 @@ TEST_CASE("variant conversion - to float", "[variant]")
         CHECK(var.to_float() == 12.0f);
         CHECK(var.convert<float>() == 12.0f);
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 12.0f);
+        CHECK(var.get_value_unsafe<float>() == 12.0f);
 
         var = -23;
         CHECK(var.to_float() == -23.0f);
@@ -370,7 +373,7 @@ TEST_CASE("variant conversion - to float", "[variant]")
         CHECK(var.to_float() == 23.0f);
         CHECK(var.convert<float>() == 23.0f);
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 23.0f);
+        CHECK(var.get_value_unsafe<float>() == 23.0f);
 
         var = "text 42";
         bool ok = false;
@@ -469,7 +472,7 @@ TEST_CASE("variant conversion - to double", "[variant]")
         CHECK(var.to_double() == 12.0);
         CHECK(var.convert<double>() == 12.0);
         CHECK(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 12.0);
+        CHECK(var.get_value_unsafe<double>() == 12.0);
 
         var = -23;
         CHECK(var.to_double() == -23.0);
@@ -581,7 +584,7 @@ TEST_CASE("variant test - convert custom types", "[variant]")
 
     CHECK(var.convert(type::get<std::string>())   == true);
     REQUIRE(var.is_type<std::string>()              == true);
-    CHECK(var.get_value<std::string>()            == "12, 34");
+    CHECK(var.get_value_unsafe<std::string>()            == "12, 34");
 
     // convert to other custom type
     var = point(12, 34);
@@ -617,7 +620,7 @@ TEST_CASE("variant test - convert internal", "[variant]")
     could_convert = var.convert(type::get<derived*>());
     CHECK(could_convert == true);
     CHECK(var.is_type<derived*>() == true);
-    CHECK(var.get_value<derived*>() == d);
+    CHECK(var.get_value_unsafe<derived*>() == d);
     CHECK(var.convert<base*>() == b);
 
     derived* d2 = nullptr;
@@ -740,7 +743,7 @@ TEST_CASE("variant test - convert to wrapped value", "[variant]")
         auto result = var.convert(type::get<std::shared_ptr<int>>());
         CHECK(result == true);
         CHECK(var.get_type() == type::get<std::shared_ptr<int>>());
-        CHECK(var.get_value<std::shared_ptr<int>>().get() == raw_ptr);
+        CHECK(var.get_value_unsafe<std::shared_ptr<int>>().get() == raw_ptr);
     }
 
     SECTION("convert and return wrapper")

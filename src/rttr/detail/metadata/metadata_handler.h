@@ -32,52 +32,43 @@
 #include "rttr/detail/metadata/metadata.h"
 #include "rttr/variant.h"
 
-#include <array>
+#include <vector>
 
 namespace rttr
 {
 namespace detail
 {
 
+RTTR_API const variant& get_empty_variant();
+
 /*!
  * This class holds an index to possible meta data.
  * This can be also a name or the declaring type of a property or method.
  */
-template<std::size_t Metadata_Count>
 class metadata_handler
 {
     public:
-        RTTR_FORCE_INLINE metadata_handler(std::array<metadata, Metadata_Count> new_data) : m_metadata_list(std::move(new_data)) { }
-
-        RTTR_INLINE variant get_metadata(const variant& key) const
+        RTTR_FORCE_INLINE metadata_handler(std::vector<metadata>&& new_data)
+            : m_metadata_list(std::move(new_data))
         {
-            // I don't expect that many data, so we iterate from start to end
-            for (const auto& item : m_metadata_list)
+            std::sort(m_metadata_list.begin(), m_metadata_list.end(), [](const detail::metadata& left, const detail::metadata& right) { return left.get_key() < right.get_key(); });
+            auto last = std::unique(m_metadata_list.begin(), m_metadata_list.end(), [](const detail::metadata& left, const detail::metadata& right) { return left.get_key() == right.get_key(); });
+            m_metadata_list.erase(last, m_metadata_list.end());
+        }
+
+        RTTR_INLINE const variant& get_metadata(uint64_t key) const
+        {
+            const auto it = std::lower_bound(m_metadata_list.begin(), m_metadata_list.end(), key, [](const detail::metadata& meta, uint64_t key) { return meta.get_key() < key; });
+            if (it != m_metadata_list.end() && key == it->get_key())
             {
-                if (item.get_key() == key)
-                    return item.get_value();
+                return it->get_value();
             }
 
-            return variant();
+            return get_empty_variant();
         }
 
     private:
-        std::array<metadata, Metadata_Count> m_metadata_list;
-};
-
-/*!
- * We use the C++ idiom of empty base class optimization.
- * So a wrapper with no metadata, will increase its sizeof(T).
- */
-template<>
-class metadata_handler<0>
-{
-    public:
-        RTTR_FORCE_INLINE metadata_handler(std::array<metadata, 0>) {}
-
-        RTTR_FORCE_INLINE void set_metadata(std::array<metadata, 0> new_data) { }
-
-        RTTR_INLINE variant get_metadata(const variant& key) const  { return variant(); }
+        std::vector<metadata> m_metadata_list;
 };
 
 } // end namespace detail

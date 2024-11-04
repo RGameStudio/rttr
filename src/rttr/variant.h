@@ -104,12 +104,12 @@ namespace detail
  *
  *  int my_array[100];
  *  var = my_array;                         // copies the content of my_array into var
- *  auto& arr = var.get_value<int[100]>();  // extracts the content of var by reference
+ *  auto& arr = var.get_value_unsafe<int[100]>();  // extracts the content of var by reference
  * \endcode
  *
  * Extract Value
  * -------------
- * For extracting a value out of a variant you can use the \ref get_value() function.
+ * For extracting a value out of a variant you can use the \ref get_value_unsafe() function.
  * This will return a *const reference* to the contained value.
  * However, you must instantiated this function with the exact type of the stored value,
  * otherwise undefined behaviour will occur.
@@ -124,7 +124,7 @@ namespace detail
  *
  *  variant var = custom_type{};
  *  if (var.is_type<custom_type>())                             // yields to true
- *    const custom_type& value = var.get_value<custom_type>();  // extracts the value by reference
+ *    const custom_type& value = var.get_value_unsafe<custom_type>();  // extracts the value by reference
  * \endcode
  *
  * Conversion
@@ -423,7 +423,7 @@ class RTTR_API variant
          *
          *  variant var = custom_type{};
          *  if (var.is_type<custom_type>())                         // yields to true
-         *      custom_type& value = var.get_value<custom_type>();  // extracts the value by reference
+         *      custom_type& value = var.get_value_unsafe<custom_type>();  // extracts the value by reference
          * \endcode
          *
          * \remark Only call this method when it is possible to return the containing value as the given type \p T.
@@ -431,12 +431,14 @@ class RTTR_API variant
          *         Otherwise the call leads to undefined behaviour.
          *         Also make sure you don't clean this variant, when you still hold a reference to the containing value.
          *
+         * \note Basically it's just a reinterpret_cast<T*>(m_data);
+         *
          * \see is_type(), variant_cast<T>
          *
          * \return A reference to the stored value.
          */
         template<typename T>
-        T& get_value();
+        T& get_value_unsafe();
 
         /*!
          * \brief Returns a reference to the containing value as type \p T.
@@ -449,7 +451,7 @@ class RTTR_API variant
          *
          *  variant var = custom_type{};
          *  if (var.is_type<custom_type>())                             // yields to true
-         *    const custom_type& value = var.get_value<custom_type>();  // extracts the value by reference
+         *    const custom_type& value = var.get_value_unsafe<custom_type>();  // extracts the value by reference
          * \endcode
          *
          * \remark Only call this method when it is possible to return the containing value as the given type \p T.
@@ -457,12 +459,62 @@ class RTTR_API variant
          *         Otherwise the call leads to undefined behaviour.
          *         Also make sure you don't clean this variant, when you still hold a reference to the containing value.
          *
+         * \note Basically it's just a reinterpret_cast<T*>(m_data);
+         *
          * \see is_type(), variant_cast<T>
          *
          * \return A reference to the stored value.
          */
         template<typename T>
-        const T& get_value() const;
+        const T& get_value_unsafe() const;
+
+        /*!
+         * \brief Returns a reference to the containing value as type \p T if posible.
+         *
+         * \code{.cpp}
+         *  struct custom_type
+         *  {
+         *     //...
+         *  };
+         *
+         *  custom_type obj{}
+         *  variant var = std::ref(obj);
+         *  custom_type& value = var.get_value_safe<custom_type>();  // extracts the value by reference
+         * \endcode
+         *
+         * \remark This methods unwraps value wrappers effectively and uses RTTR_ASSERT in case variant does not contain
+         *         object of requested type or in case the object is const and can't beaccessed by mutablereference.
+         *
+         * \see is_type(), variant_cast<T>
+         *
+         * \return A reference to the stored value.
+         */
+        template<typename T>
+        T& get_value_safe();
+
+        /*!
+         * \brief Returns a reference to the containing value as type \p T if posible.
+         *
+         * \code{.cpp}
+         *  struct custom_type
+         *  {
+         *     //...
+         *  };
+         *
+         *  custom_type obj{}
+         *  variant var = std::cref(obj);
+         *  custom_type& value = std::as_const(var).get_value_safe<custom_type>();  // extracts the value by const reference
+         * \endcode
+         *
+         * \remark This methods unwraps value wrappers effectively and uses RTTR_ASSERT in case variant does not contain
+         *         object of requested type.
+         *
+         * \see is_type(), variant_cast<T>
+         *
+         * \return A reference to the stored value.
+         */
+        template<typename T>
+        const T& get_value_safe() const;
 
         /*!
          * \brief Returns a reference to the contained wrapped value as type \p T.
@@ -472,7 +524,7 @@ class RTTR_API variant
          *  variant var = std::ref(value);
          *
          *  if (var.get_type().get_wrapped_type() == type::get<int>())  // yields to true
-         *    const int& ref_value = var.get_wrapped_value<int>();  // extracts the value by reference
+         *    const int& ref_value = var.get_wrapped_value_unsafe<int>();  // extracts the value by reference
          * \endcode
          *
          * \remark Only call this method when it is possible to return the containing value as the given type \p T.
@@ -484,7 +536,7 @@ class RTTR_API variant
          * \return A reference to the stored wrapped value.
          */
         template<typename T>
-        const T& get_wrapped_value() const;
+        const T& get_wrapped_value_unsafe() const;
 
         /*!
          * \brief Extracts the wrapped value and copies its content into a new variant.
@@ -497,7 +549,7 @@ class RTTR_API variant
          *  {
          *     variant var2 = var1.extract_wrapped_value(); // value will be copied into "var2"
          *     var2.get_type() == type::get<int>(); // yields to true
-         *     const int& value2 = var2.get_value<int>();
+         *     const int& value2 = var2.get_value_unsafe<int>();
          *     std::cout << value2 << std::endl;    // prints "23"
          *  }
          * \endcode
@@ -510,6 +562,64 @@ class RTTR_API variant
          * \see type::is_wrapper()
          */
         variant extract_wrapped_value() const;
+
+        /*!
+         * \brief Assign new value to the object referenced by the wrapper stored in the variant. Argument is moved-from.
+         *
+         * \code{.cpp}
+         *  int value = 1;
+         *  variant var = std::ref(value);
+         *  bool success = var.assign_wrapped_value(2); // yields to true
+         *  std::cout << value << std::endl; // prints "2"
+         * \endcode
+         *
+         * \remark Operation succeeds only if variant's wrapped type is the same as argument's type.
+         */
+        bool assign_wrapped_value(variant&& value);
+
+        /*!
+         * \brief Dereferences pointer and copies value into a new variant.
+         *
+         * \code{.cpp}
+         *  int value1 = 23;
+         *  int ptr1 = &value1;
+         *  variant var1 = ptr1;
+         *
+         *  if (var1.get_type() == type::get<int*>())  // yields to true
+         *  {
+         *     variant var2 = var1.extract_pointer_value(); // value will be copied into "var2"
+         *     var2.get_type() == type::get<int>(); // yields to true
+         *     const int& value2 = var2.get_value_unsafe<int>();
+         *     std::cout << value2 << std::endl;    // prints "23"
+         *  }
+         * \endcode
+         *
+         * \remark Calling this method works only for types which are copiable.
+         *         When you work with custom types, which are not copyable, the variant will be \ref is_valid "invalid"
+         *
+         * \return A variant with the value.
+         *
+         * \see type::is_pointer()
+         */
+        variant extract_pointer_value() const;
+
+		/*!
+		 * \brief Returns `true` if the contained value is const and should not be modified
+		 *
+		 * \code{.cpp}
+		 * int a = 0;
+		 *
+		 * rttr::variant constWrapper(std::reference_wrapper<const int>(a));
+		 * rttr::variant wrapper(std::reference_wrapper<int>(a));
+		 *
+		 * std::cout << constWrapper.is_const() << std::endl; // prints "true"
+		 * std::cout << wrapper.is_const() << std::endl;      // prints "false"
+		 * \endcode
+		 *
+		 * \return `True` if this variant is const; otherwise `false`
+		 *
+		 */
+        bool is_const() const;
 
         /*!
          * \brief Returns `true` if the contained value can be converted to the given type \p T.
@@ -551,8 +661,8 @@ class RTTR_API variant
          *
          * See therefore following example code:
          * \code{.cpp}
-         *  struct base { virtual ~base(){} RTTR_ENABLE() };
-         *  struct derived : base { RTTR_ENABLE(base) };
+         *  struct base { virtual ~base(){} RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() };
+         *  struct derived : base { RTTR_DECLARE_ANCESTORS(base) RTTR_ENABLE_OBJECT_INFO() };
          *  derived d;
          *  variant var = static_cast<base*>(&d);           // var contains a '*base' ptr
          *  bool ret = var.convert(type::get<derived*>());  // yields to 'true'
@@ -936,10 +1046,6 @@ class RTTR_API variant
          */
         uint64_t to_uint64(bool *ok = nullptr) const;
 
-    private:
-        /////////////////////////////////////////////////////////////////////////////////
-
-
         /*!
          * \brief Returns a pointer to the underlying data
          *
@@ -948,15 +1054,6 @@ class RTTR_API variant
          * \return
          */
         RTTR_INLINE void* get_ptr() const;
-
-         /*!
-         * \brief Returns the type object of the underlying data
-         *
-         * \remark You do not have to use this method directly.
-         *
-         * \return Type object.
-         */
-        RTTR_INLINE type get_raw_type() const;
 
         /*!
          * \brief Returns a pointer to the underlying data.
@@ -967,6 +1064,22 @@ class RTTR_API variant
          * \return Raw void pointer.
          */
         RTTR_INLINE void* get_raw_ptr() const;
+
+    private:
+        /////////////////////////////////////////////////////////////////////////////////
+
+
+         /*!
+         * \brief Returns the type object of the underlying data
+         *
+         * \remark You do not have to use this method directly.
+         *
+         * \return Type object.
+         */
+        RTTR_INLINE type get_raw_type() const;
+
+        template<typename T, bool Const>
+        T& get_value_safe_impl();
 
         //! Helper function to initialize all arithmetic types
         template<typename T>

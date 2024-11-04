@@ -1,3 +1,5 @@
+#pragma once
+
 /************************************************************************************
 *                                                                                   *
 *   Copyright (c) 2014 - 2018 Axel Menzel <info@rttr.org>                           *
@@ -25,96 +27,108 @@
 *                                                                                   *
 *************************************************************************************/
 
-#ifndef RTTR_TYPE_NAME_H_
-#define RTTR_TYPE_NAME_H_
-
 #include "rttr/detail/base/core_prerequisites.h"
 
-#include "rttr/string_view.h"
+#include <array>
+#include <string_view>
+#include <utility>
 
-/////////////////////////////////////////////////////////////////////////////////
-
-#define RTTR_REGISTRATION_FUNC_EXTRACT_VARIABLES(begin_skip, end_skip)      \
-namespace rttr                                                              \
-{                                                                           \
-namespace detail                                                            \
-{                                                                           \
-    RTTR_STATIC_CONSTEXPR std::size_t skip_size_at_begin = begin_skip;      \
-    RTTR_STATIC_CONSTEXPR std::size_t skip_size_at_end   = end_skip;        \
-}                                                                           \
-}
+namespace rttr::detail
+{
 
 /////////////////////////////////////////////////////////////////////////////////
 
 #if RTTR_COMPILER == RTTR_COMPILER_MSVC
-    // sizeof("const char *__cdecl rttr::detail::f<"), sizeof(">(void)")
-#ifdef RTTR_NO_CXX11_NOEXCEPT
-    RTTR_REGISTRATION_FUNC_EXTRACT_VARIABLES(36, 7)
-#else
-    RTTR_REGISTRATION_FUNC_EXTRACT_VARIABLES(36, 16)  // with " noexcept"
-#endif
-
+#   define RTTR_FUNCTION __FUNCSIG__
+#   define RTTR_TYPE_NAME_FUNC_NAME_HEAD "auto __cdecl rttr::detail::get_type_name_array<"
+#   define RTTR_TYPE_NAME_FUNC_NAME_TAIL ">(void)"
 #elif RTTR_COMPILER == RTTR_COMPILER_GNUC
-    // sizeof("const char* rttr::detail::f() [with T = "), sizeof("]")
-    RTTR_REGISTRATION_FUNC_EXTRACT_VARIABLES(40, 1)
+#   define RTTR_FUNCTION __PRETTY_FUNCTION__
+#   define RTTR_TYPE_NAME_FUNC_NAME_HEAD "constexpr auto rttr::detail::get_type_name_array() [with T = "
+#   define RTTR_TYPE_NAME_FUNC_NAME_TAIL "]"
 #elif RTTR_COMPILER == RTTR_COMPILER_CLANG || RTTR_COMPILER == RTTR_COMPILER_APPLECLANG
-    // sizeof("const char* rttr::detail::f() [T = "), sizeof("]")
-    RTTR_REGISTRATION_FUNC_EXTRACT_VARIABLES(35, 1)
+#   define RTTR_FUNCTION __PRETTY_FUNCTION__
+#   define RTTR_TYPE_NAME_FUNC_NAME_HEAD "auto rttr::detail::get_type_name_array() [T = "
+#   define RTTR_TYPE_NAME_FUNC_NAME_TAIL "]"
 #else
-#   error "This compiler does not supported extracting a function signature via preprocessor!"
+#   error This compiler does not support extracting a function signature via preprocessor!
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////
 
-namespace rttr
-{
-namespace detail
-{
+RTTR_STATIC_CONSTEXPR std::size_t skip_size_at_begin = sizeof(RTTR_TYPE_NAME_FUNC_NAME_HEAD) - 1;
+RTTR_STATIC_CONSTEXPR std::size_t skip_size_at_end   = sizeof(RTTR_TYPE_NAME_FUNC_NAME_TAIL) - 1;
 
 /////////////////////////////////////////////////////////////////////////////////
 
-RTTR_LOCAL RTTR_INLINE const char* extract_type_signature(const char* signature) RTTR_NOEXCEPT
+template <size_t N, std::size_t...Idxs>
+RTTR_STATIC_CONSTEXPR auto cut_array(std::array<char, N> arr, std::index_sequence<Idxs...>)
 {
-//    static_assert(N > skip_size_at_begin + skip_size_at_end, "RTTR is misconfigured for your compiler.")
-    return &signature[rttr::detail::skip_size_at_begin];
+    return std::array{arr[Idxs]...};
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+template <size_t N>
+RTTR_STATIC_CONSTEXPR auto format_string(std::string_view type_name) {
+    constexpr std::array<std::string_view, 3>prefixes{"class ", "struct ", "enum "};
+    size_t prefix_size = 0;
+    for (const auto prefix: prefixes)
+    {
+        if (type_name.find(prefix) == 0)
+        {
+            prefix_size = prefix.size();
+            break;
+        }
+    }
+
+    std::array<char, N> res = {};
+    size_t wr_pos = 0;
+    for (size_t i = prefix_size; i < type_name.size(); ++i)
+    {
+        if (type_name[i] == ' ' && i > prefix_size && type_name[i - 1] == ',')
+        {
+            continue;
+        }
+        if (type_name[i] == '>' && i > prefix_size && type_name[i - 1] == ' ')
+        {
+            res[wr_pos - 1] = type_name[i];
+            continue;
+        }
+        res[wr_pos++] = type_name[i];
+    }
+    return std::pair(res, wr_pos);
 }
 
 /////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-RTTR_LOCAL RTTR_INLINE const char* f() RTTR_NOEXCEPT
+RTTR_STATIC_CONSTEXPR auto get_type_name_array()
 {
-    return extract_type_signature(
-    #if RTTR_COMPILER == RTTR_COMPILER_MSVC
-                                                            __FUNCSIG__
-    #elif RTTR_COMPILER == RTTR_COMPILER_GNUC
-                                                            __PRETTY_FUNCTION__
-    #elif RTTR_COMPILER == RTTR_COMPILER_CLANG || RTTR_COMPILER == RTTR_COMPILER_APPLECLANG
-                                                            __PRETTY_FUNCTION__
-    #else
-        #error "Don't know how the extract type signatur for this compiler! Abort! Abort!"
-    #endif
-                                   );
+    constexpr auto sig = std::string_view(RTTR_FUNCTION);
+    constexpr auto name = sig.substr(skip_size_at_begin, sig.size() - skip_size_at_begin - skip_size_at_end);
+    constexpr auto name_arr = format_string<name.size()>(name);
+
+    return cut_array(name_arr.first, std::make_index_sequence<name_arr.second>{});
 }
 
 /////////////////////////////////////////////////////////////////////////////////
 
-RTTR_LOCAL RTTR_INLINE std::size_t get_size(const char* s) RTTR_NOEXCEPT
+template <typename T>
+struct type_name_holder
 {
-    return ( std::char_traits<char>::length(s) - rttr::detail::skip_size_at_end);
+    static inline constexpr auto value = get_type_name_array<T>();
+};
+
+/////////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+RTTR_STATIC_CONSTEXPR std::string_view get_type_name() RTTR_NOEXCEPT
+{
+    constexpr auto & value = type_name_holder<T>::value;
+    return std::string_view{value.data(), value.size()};
 }
 
 /////////////////////////////////////////////////////////////////////////////////
 
-template<typename T>
-RTTR_LOCAL RTTR_INLINE string_view get_type_name() RTTR_NOEXCEPT
-{
-    return string_view(f<T>(), get_size(f<T>()));
-}
-
-/////////////////////////////////////////////////////////////////////////////////
-
-} // end namespace detail
-} // end namespace rttr
-
-#endif // RTTR_TYPE_NAME_H_
+} // end namespace rttr::detail

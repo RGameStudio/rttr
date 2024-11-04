@@ -45,8 +45,7 @@ target_link_libraries(scripting_example RTTR::Core ChaiScript::ChaiScript ${CMAK
 set_target_properties(scripting_example 
                        PROPERTIES DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                   FOLDER "Examples"
-                                  INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}"
-                                  CXX_STANDARD 14)
+                                  INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}")
 if (MSVC)
     target_compile_options(scripting_example PRIVATE /bigobj) 
 endif()

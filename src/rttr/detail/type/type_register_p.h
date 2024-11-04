@@ -29,17 +29,15 @@
 #define RTTR_TYPE_REGISTER_P_H_
 
 #include "rttr/detail/base/core_prerequisites.h"
-#include "rttr/detail/misc/flat_multimap.h"
-#include "rttr/detail/misc/flat_map.h"
 #include "rttr/enumeration.h"
 #include "rttr/variant.h"
 #include "rttr/detail/metadata/metadata.h"
 
-#include "rttr/string_view.h"
-
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
+#include <unordered_map>
 #include <mutex>
 
 namespace rttr
@@ -73,7 +71,7 @@ public:
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    type_data* register_type(type_data* info) RTTR_NOEXCEPT;
+    std::pair<type_data*, bool> register_type(type_data&& info) RTTR_NOEXCEPT;
     void unregister_type(type_data* info) RTTR_NOEXCEPT;
 
     bool register_constructor(const constructor_wrapper_base* ctor);
@@ -87,23 +85,25 @@ public:
     bool register_global_method(const method_wrapper_base* meth);
     bool unregister_global_method(const method_wrapper_base* meth);
 
-    void register_custom_name(type& t, string_view custom_name);
+    void register_custom_name(type& t, std::string_view custom_name);
 
     /////////////////////////////////////////////////////////////////////////////////////
-    flat_multimap<string_view, ::rttr::property>& get_global_property_storage();
-    flat_multimap<string_view, ::rttr::method>& get_global_method_storage();
+    const auto& get_global_property_storage() const { return m_global_property_storage; }
+    const auto& get_global_method_storage() const { return m_global_method_storage; }
     /////////////////////////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////////////////////////
-    std::vector<::rttr::method>& get_global_methods();
-    std::vector<::rttr::property>& get_global_properties();
+    const auto& get_global_methods() { return m_global_methods; }
+    const auto& get_global_properties() { return m_global_properties; }
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    std::vector<type_data*>& get_type_data_storage();
+    std::deque<type_data>& get_type_data_storage();
     std::vector<type>& get_type_storage();
-    flat_map<string_view, type>& get_orig_name_to_id();
-    flat_map<std::string, type, hash>& get_custom_name_to_id();
+
+    //-- TODO (d_dezhko): thread-safe type lookup by name 
+    //--				  Make a bug report to the author	 
+    type get_by_custom_name(std::string_view custom_name);
 
     /////////////////////////////////////////////////////////////////////////////////////
 
@@ -123,8 +123,8 @@ public:
     const type_comparator_base* get_less_than_comparator(const type& t);
 
     /////////////////////////////////////////////////////////////////////////////////////
-    static variant get_metadata(const type& t, const variant& key);
-    static variant get_metadata(const variant& key, const std::vector<metadata>& data);
+    static const variant& get_metadata(const type& t, uint64_t key);
+    static const variant& get_metadata(uint64_t key, const std::vector<metadata>& data);
     /////////////////////////////////////////////////////////////////////////////////////
 
     static type_register_private& get_instance();
@@ -171,40 +171,53 @@ private:
         Data_Type       m_data;
     };
 
+    struct bypass
+    {
+        [[nodiscard]] constexpr size_t operator()(size_t v) const noexcept
+        {
+            return v;
+        }
+    };
+
     static bool register_comparator_impl(const type& t, const type_comparator_base* comparator,
                                          std::vector<data_container<const type_comparator_base*>>& comparator_list);
     static const type_comparator_base* get_type_comparator_impl(const type& t,
                                                                 const std::vector<data_container<const type_comparator_base*>>& comparator_list);
 
-    static ::rttr::property get_type_property(const type& t, string_view name);
-    static ::rttr::method get_type_method(const type& t, string_view name,
+    static ::rttr::property get_type_property(const type& t, std::string_view name);
+    static ::rttr::method get_type_method(const type& t, std::string_view name,
                                           const std::vector<type>& type_list);
 
     template<typename T>
     static void update_class_list(const type& t, T item_ptr);
 
-    static std::string derive_name(const type& t);
-    //! Returns true, when the name was already registered
-    type_data* register_name_if_neccessary(type_data* info);
-    static void register_base_class_info(type_data* info);
     /*!
      * \brief This will create the derived name of a template instance, with all the custom names of a template parameter.
      * e.g.: `std::reference_wrapper<class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > >` =>
      *       `std::reference_wrapper<class std::string>`
      *
      */
-    static std::string derive_template_instance_name(type_data* info);
+    static std::string derive_name(const type& t);
+
+    //! Returns true, when the name was already registered
+    static void register_base_class_info(type_data* info);
 
     /*!
      * Updates the custom name for the given type \p t with \p new_name
      */
-    void update_custom_name(std::string new_name, const type& t);
+    void update_custom_name(const type& t, std::string new_name);
 
     //! This will remove from all base classes the derived types (e.g. because of type unloaded)
     void remove_derived_types_from_base_classes(type& t, const std::vector<type>& base_types);
 
     //! This will remove from all derived classes the base types (e.g. because of type unloaded)
     void remove_base_types_from_derived_classes(type& t, const std::vector<type>& derived_types);
+
+    template<typename Fn>
+    static void enumerate_dependencies(type_data* info, const Fn& fn);
+
+    static void register_dependent_type(type_data* info);
+    static void unregister_dependent_type(type_data* info);
 
     /*! A helper class to register the registration managers.
      * This class is needed in order to avoid that the registration_manager instance's
@@ -213,13 +226,13 @@ private:
      */
     std::set<registration_manager*>                             m_registration_manager_list;
 
-    flat_map<std::string, type, hash>                           m_custom_name_to_id;
-    flat_map<string_view, type>                                 m_orig_name_to_id;
+    std::unordered_map<size_t, type, bypass>                    m_custom_name_to_id;
+    std::unordered_map<size_t, type, bypass>                    m_orig_name_to_id;
     std::vector<type>                                           m_type_list;
-    std::vector<type_data*>                                     m_type_data_storage;
+    std::deque<type_data>                                       m_type_data_storage;
 
-    flat_multimap<string_view, ::rttr::property>                m_global_property_stroage;
-    flat_multimap<string_view, ::rttr::method>                  m_global_method_stroage;
+    std::unordered_map<size_t, std::vector<::rttr::property>, bypass> m_global_property_storage;
+    std::unordered_map<size_t, std::vector<::rttr::method>, bypass> m_global_method_storage;
     std::vector<::rttr::property>                               m_global_properties;
     std::vector<::rttr::method>                                 m_global_methods;
 

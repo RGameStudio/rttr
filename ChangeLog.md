@@ -29,7 +29,7 @@ Blog Entry: www.rttr.org/news/major-release-0-9-6
 - Added CI systems: Travis and Appveyor
 - Added static code analysis tool Codacy (cppcheck underlying)
 - Added code coverage tool: "CoverAlls"
-- Added `variant::get_wrapped_value()` & `variant::extract_wrapped_value()` functions
+- Added `variant::get_wrapped_value_unsafe()` & `variant::extract_wrapped_value()` functions
 - Donation button added: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JQ65KGGCSUZMS)
 
 [![Generic badge](https://img.shields.io/badge/►-Improvements-84E61B.svg?colorA=84E61B)](https://github.com/acki-m/rttr/blob/feature-adjust-readme/ChangeLog.md)

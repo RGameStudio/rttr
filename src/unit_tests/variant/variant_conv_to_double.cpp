@@ -58,7 +58,7 @@ TEST_CASE("variant::to_double() - from bool", "[variant]")
     CHECK(var.convert<double>(&ok) == 1.0);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<double>()) == true);
-    CHECK(var.get_value<double>() == 1.0);
+    CHECK(var.get_value_unsafe<double>() == 1.0);
 
     // false case
     var = false;
@@ -68,7 +68,7 @@ TEST_CASE("variant::to_double() - from bool", "[variant]")
     CHECK(var.convert<double>(&ok) == 0.0);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<double>()) == true);
-    CHECK(var.get_value<double>() == 0.0);
+    CHECK(var.get_value_unsafe<double>() == 0.0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ TEST_CASE("variant::to_double() - from char", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 65.0);
+        CHECK(var.get_value_unsafe<double>() == 65.0);
     }
 
 RTTR_BEGIN_DISABLE_CONDITIONAL_EXPR_WARNING
@@ -118,7 +118,7 @@ TEST_CASE("variant::to_double() - from std::string", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 5000000000.0);
+        CHECK(var.get_value_unsafe<double>() == 5000000000.0);
     }
 
     SECTION("valid conversion negative")
@@ -166,6 +166,65 @@ TEST_CASE("variant::to_double() - from std::string", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant::to_double() - from std::string_view", "[variant]")
+{
+    SECTION("valid conversion positive")
+    {
+        variant var = std::string_view("5000000000");
+        REQUIRE(var.can_convert<double>() == true);
+        bool ok = false;
+        CHECK(var.to_double(&ok) == 5000000000.0);
+        CHECK(ok == true);
+
+        REQUIRE(var.convert(type::get<double>()) == true);
+        CHECK(var.get_value_unsafe<double>() == 5000000000.0);
+    }
+
+    SECTION("valid conversion negative")
+    {
+        variant var = std::string_view("-5000000000");
+        bool ok = false;
+        CHECK(var.to_double(&ok) == -5000000000.0);
+        CHECK(ok == true);
+        CHECK(var.convert(type::get<double>()) == true);
+    }
+
+    SECTION("too big")
+    {
+        variant var = std::string_view("1.79769e+309");
+        bool ok = false;
+        CHECK(var.to_double(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<double>()) == false);
+    }
+
+    SECTION("too small")
+    {
+        variant var = std::string_view("-1.79769e+309");
+        bool ok = false;
+        CHECK(var.to_double(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<double>()) == false);
+    }
+
+    SECTION("invalid conversion")
+    {
+        variant var = std::string_view("text 34 and text");
+        bool ok = false;
+        CHECK(var.to_double(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<double>()) == false);
+
+        var = std::string_view("34 and text");
+        ok = false;
+        CHECK(var.to_double(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<double>()) == false);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant::to_double() - from int", "[variant]")
 {
     SECTION("valid conversion positive")
@@ -177,7 +236,7 @@ TEST_CASE("variant::to_double() - from int", "[variant]")
 
         CHECK(ok == true);
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 2147483640.0);
+        CHECK(var.get_value_unsafe<double>() == 2147483640.0);
     }
 
     SECTION("valid conversion negative")
@@ -203,7 +262,7 @@ TEST_CASE("variant::to_double() - from float", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == Approx(214748.9));
+        CHECK(var.get_value_unsafe<double>() == Approx(214748.9));
     }
 
     SECTION("valid conversion negative")
@@ -229,7 +288,7 @@ TEST_CASE("variant::to_double() - from double", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == Approx(5000000000.9));
+        CHECK(var.get_value_unsafe<double>() == Approx(5000000000.9));
     }
 
     SECTION("valid conversion negative")
@@ -255,7 +314,7 @@ TEST_CASE("variant::to_double() - from int8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 50.0);
+        CHECK(var.get_value_unsafe<double>() == 50.0);
     }
 
     SECTION("valid conversion negative")
@@ -281,7 +340,7 @@ TEST_CASE("variant::to_double() - from int16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 32760.0);
+        CHECK(var.get_value_unsafe<double>() == 32760.0);
     }
 
     SECTION("valid conversion negative")
@@ -307,7 +366,7 @@ TEST_CASE("variant::to_double() - from int32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 2147483640.0);
+        CHECK(var.get_value_unsafe<double>() == 2147483640.0);
     }
 
     SECTION("valid conversion negative")
@@ -333,7 +392,7 @@ TEST_CASE("variant::to_double() - from int64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 5000000000.0);
+        CHECK(var.get_value_unsafe<double>() == 5000000000.0);
     }
 
     SECTION("valid conversion negative")
@@ -359,7 +418,7 @@ TEST_CASE("variant::to_double() - from uint8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 50.0);
+        CHECK(var.get_value_unsafe<double>() == 50.0);
     }
 }
 
@@ -376,7 +435,7 @@ TEST_CASE("variant::to_double() - from uint16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 32760.0);
+        CHECK(var.get_value_unsafe<double>() == 32760.0);
     }
 }
 
@@ -393,7 +452,7 @@ TEST_CASE("variant::to_double() - from uint32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 32760.0);
+        CHECK(var.get_value_unsafe<double>() == 32760.0);
     }
 }
 
@@ -410,7 +469,7 @@ TEST_CASE("variant::to_double() - from uint64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 2147483640.0);
+        CHECK(var.get_value_unsafe<double>() == 2147483640.0);
     }
 }
 
@@ -427,7 +486,7 @@ TEST_CASE("variant::to_double() - from enum", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<double>()) == true);
-        CHECK(var.get_value<double>() == 2147483630.0);
+        CHECK(var.get_value_unsafe<double>() == 2147483630.0);
     }
 
     SECTION("valid conversion negative")

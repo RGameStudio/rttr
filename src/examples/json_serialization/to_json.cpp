@@ -44,6 +44,8 @@ using namespace rttr;
 namespace
 {
 
+inline static constexpr uint64_t c_no_serialize_meta_key = rttr::hash_string("NO_SERIALIZE");
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void to_json_recursively(const instance& obj, PrettyWriter<StringBuffer>& writer);
@@ -145,8 +147,8 @@ static void write_array(const variant_sequential_view& view, PrettyWriter<String
 
 static void write_associative_container(const variant_associative_view& view, PrettyWriter<StringBuffer>& writer)
 {
-    static const string_view key_name("key");
-    static const string_view value_name("value");
+    static const std::string_view key_name("key");
+    static const std::string_view value_name("value");
 
     writer.StartArray();
 
@@ -231,7 +233,7 @@ void to_json_recursively(const instance& obj2, PrettyWriter<StringBuffer>& write
     auto prop_list = obj.get_derived_type().get_properties();
     for (auto prop : prop_list)
     {
-        if (prop.get_metadata("NO_SERIALIZE"))
+        if (prop.get_metadata(c_no_serialize_meta_key))
             continue;
 
         variant prop_value = prop.get_value(obj);

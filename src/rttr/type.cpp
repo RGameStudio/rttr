@@ -32,11 +32,13 @@
 #include "rttr/destructor.h"
 #include "rttr/enumeration.h"
 #include "rttr/method.h"
+#include "rttr/template_argument_data.h"
 
 #include "rttr/detail/constructor/constructor_wrapper_base.h"
 #include "rttr/detail/destructor/destructor_wrapper_base.h"
 #include "rttr/detail/enumeration/enumeration_wrapper_base.h"
 #include "rttr/detail/method/method_wrapper_base.h"
+#include "rttr/hash_string_constexpr.h"
 #include "rttr/detail/property/property_wrapper.h"
 #include "rttr/rttr_enable.h"
 
@@ -65,7 +67,7 @@ namespace rttr
 /////////////////////////////////////////////////////////////////////////////////////////
 
 type::type() RTTR_NOEXCEPT
-:   m_type_data(detail::get_invalid_type_data())
+:   m_type_data(&detail::get_invalid_type_data())
 {
 }
 
@@ -73,8 +75,8 @@ type::type() RTTR_NOEXCEPT
 
 bool type::is_derived_from(const type& other) const RTTR_NOEXCEPT
 {
-    auto& src_raw_type = m_type_data->raw_type_data;
-    auto& tgt_raw_type = other.m_type_data->raw_type_data;
+    auto& src_raw_type = m_type_data->m_raw_type_data;
+    auto& tgt_raw_type = other.m_type_data->m_raw_type_data;
 
     if (src_raw_type == tgt_raw_type)
         return true;
@@ -94,8 +96,8 @@ bool type::is_derived_from(const type& other) const RTTR_NOEXCEPT
 
 bool type::is_base_of(const type& other) const RTTR_NOEXCEPT
 {
-    auto& src_raw_type = m_type_data->raw_type_data;
-    auto& tgt_raw_type = other.m_type_data->raw_type_data;
+    auto& src_raw_type = m_type_data->m_raw_type_data;
+    auto& tgt_raw_type = other.m_type_data->m_raw_type_data;
 
     if (src_raw_type == tgt_raw_type)
         return true;
@@ -115,17 +117,17 @@ bool type::is_base_of(const type& other) const RTTR_NOEXCEPT
 
 void* type::apply_offset(void* ptr, const type& source_type, const type& target_type) RTTR_NOEXCEPT
 {
-    auto& src_raw_type = source_type.m_type_data->raw_type_data;
-    auto& tgt_raw_type = target_type.m_type_data->raw_type_data;
+    auto& src_raw_type = source_type.m_type_data->m_raw_type_data;
+    auto& tgt_raw_type = target_type.m_type_data->m_raw_type_data;
 
     if (src_raw_type == tgt_raw_type || ptr == nullptr)
         return ptr;
 
     const detail::derived_info info = src_raw_type->m_class_data.m_derived_info_func(ptr);
-    if (info.m_type.m_type_data->raw_type_data == tgt_raw_type)
+    if (info.m_type.m_type_data->m_raw_type_data == tgt_raw_type)
         return info.m_ptr;
 
-    auto& class_list = info.m_type.m_type_data->raw_type_data->m_class_data;
+    auto& class_list = info.m_type.m_type_data->m_raw_type_data->m_class_data;
     int i = 0;
     for (auto& t : class_list.m_base_types)
     {
@@ -146,7 +148,7 @@ type type::get_derived_type(void* ptr, const type& source_type) RTTR_NOEXCEPT
     if (ptr == nullptr)
         return type();
 
-    auto& src_raw_type = source_type.m_type_data->raw_type_data;
+    auto& src_raw_type = source_type.m_type_data->m_raw_type_data;
     const detail::derived_info info = src_raw_type->m_class_data.m_derived_info_func(ptr);
     return info.m_type;
 }
@@ -177,15 +179,15 @@ array_range<type> type::get_types() RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-array_range<type> type::get_template_arguments() const RTTR_NOEXCEPT
+array_range<template_argument_data> type::get_template_arguments() const RTTR_NOEXCEPT
 {
-    return array_range<type>(m_type_data->m_class_data.m_nested_types.data(),
-                             m_type_data->m_class_data.m_nested_types.size());
+    return array_range<template_argument_data>(m_type_data->m_class_data.m_nested_types.data(),
+                                               m_type_data->m_class_data.m_nested_types.size());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant type::get_metadata(const variant& key) const
+const variant& type::get_metadata(uint64_t key) const
 {
     return detail::type_register_private::get_metadata(*this, key);
 }
@@ -213,7 +215,7 @@ bool type::destroy(variant& obj) const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-property type::get_property(string_view name) const RTTR_NOEXCEPT
+property type::get_property(std::string_view name) const RTTR_NOEXCEPT
 {
     const auto raw_t = get_raw_type();
     const auto& vec = raw_t.m_type_data->m_class_data.m_properties;
@@ -233,14 +235,14 @@ property type::get_property(string_view name) const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant type::get_property_value(string_view name, instance obj) const
+variant type::get_property_value(std::string_view name, instance obj) const
 {
     return get_property(name).get_value(obj);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant type::get_property_value(string_view name)
+variant type::get_property_value(std::string_view name)
 {
     const auto prop = get_global_property(name);
     return prop.get_value(instance());
@@ -248,7 +250,7 @@ variant type::get_property_value(string_view name)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool type::set_property_value(string_view name, instance obj, argument arg) const
+bool type::set_property_value(std::string_view name, instance obj, argument arg) const
 {
     const auto prop = get_property(name);
     return prop.set_value(obj, arg);
@@ -256,7 +258,7 @@ bool type::set_property_value(string_view name, instance obj, argument arg) cons
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool type::set_property_value(string_view name, argument arg)
+bool type::set_property_value(std::string_view name, argument arg)
 {
     const auto prop = get_global_property(name);
     return prop.set_value(instance(), arg);
@@ -293,7 +295,7 @@ array_range<property> type::get_properties(filter_items filter) const RTTR_NOEXC
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-method type::get_method(string_view name) const RTTR_NOEXCEPT
+method type::get_method(std::string_view name) const RTTR_NOEXCEPT
 {
     const auto raw_t = get_raw_type();
     const auto& vec = raw_t.m_type_data->m_class_data.m_methods;
@@ -313,7 +315,7 @@ method type::get_method(string_view name) const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-method type::get_method(string_view name, const std::vector<type>& type_list) const RTTR_NOEXCEPT
+method type::get_method(std::string_view name, const std::vector<type>& type_list) const RTTR_NOEXCEPT
 {
     const auto raw_t = get_raw_type();
     const auto& methvec = raw_t.m_type_data->m_class_data.m_methods;
@@ -362,44 +364,44 @@ array_range<method> type::get_methods(filter_items filter) const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-property type::get_global_property(string_view name) RTTR_NOEXCEPT
+property type::get_global_property(std::string_view name) RTTR_NOEXCEPT
 {
     auto& prop_list = detail::type_register_private::get_instance().get_global_property_storage();
-    const auto ret = prop_list.find(name);
-    if (ret != prop_list.end())
-        return *ret;
+    if (auto ret = prop_list.find(rttr::hash_string(name)); ret != prop_list.end() && !ret->second.empty())
+    {
+        return ret->second.front();
+    }
 
     return detail::create_invalid_item<property>();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-method type::get_global_method(string_view name) RTTR_NOEXCEPT
+method type::get_global_method(std::string_view name) RTTR_NOEXCEPT
 {
     auto& meth_list = detail::type_register_private::get_instance().get_global_method_storage();
-    const auto ret = meth_list.find(name);
-    if (ret != meth_list.end())
-        return *ret;
+    if (auto ret = meth_list.find(rttr::hash_string(name)); ret != meth_list.end() && !ret->second.empty())
+    {
+        return ret->second.front();
+    }
 
     return detail::create_invalid_item<method>();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-method type::get_global_method(string_view name, const std::vector<type>& type_list) RTTR_NOEXCEPT
+method type::get_global_method(std::string_view name, const std::vector<type>& type_list) RTTR_NOEXCEPT
 {
     auto& meth_list = detail::type_register_private::get_instance().get_global_method_storage();
-    auto itr = meth_list.find(name);
-    while (itr != meth_list.end())
+    if (auto itr = meth_list.find(rttr::hash_string(name)); itr != meth_list.end())
     {
-        const auto& meth = *itr;
-        if (meth.get_name() != name)
-            break;
-
-        if (detail::compare_with_type_list::compare(meth.get_parameter_infos(), type_list))
-            return meth;
-
-        ++itr;
+        for (const auto& meth: itr->second)
+        {
+            if (detail::compare_with_type_list::compare(meth.get_parameter_infos(), type_list))
+            {
+                return meth;
+            }
+        }
     }
 
     return detail::create_invalid_item<method>();
@@ -425,15 +427,29 @@ array_range<property> type::get_global_properties() RTTR_NOEXCEPT
 
 enumeration type::get_enumeration() const RTTR_NOEXCEPT
 {
-    if (m_type_data->enum_wrapper)
-        return detail::create_item<enumeration>(m_type_data->enum_wrapper);
+    if (m_type_data->m_enum_wrapper)
+        return detail::create_item<enumeration>(m_type_data->m_enum_wrapper);
     else
         return detail::create_invalid_item<enumeration>();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant type::invoke(string_view name, instance obj, std::vector<argument> args) const
+type type::get_container_key_type() const RTTR_NOEXCEPT
+{
+    return m_type_data->m_cont_key ? type(m_type_data->m_cont_key) : type();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+type type::get_container_value_type() const RTTR_NOEXCEPT
+{
+    return m_type_data->m_cont_value ? type(m_type_data->m_cont_value) : type();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+variant type::invoke(std::string_view name, instance obj, std::vector<argument> args) const
 {
     const auto raw_t = get_raw_type();
     const auto& methvec = raw_t.m_type_data->m_class_data.m_methods;
@@ -452,22 +468,18 @@ variant type::invoke(string_view name, instance obj, std::vector<argument> args)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant type::invoke(string_view name, std::vector<argument> args)
+variant type::invoke(std::string_view name, std::vector<argument> args)
 {
     auto& meth_list = detail::type_register_private::get_instance().get_global_method_storage();
-    auto itr = meth_list.find(name);
-    while (itr != meth_list.end())
+    if (auto itr = meth_list.find(rttr::hash_string(name)); itr != meth_list.end())
     {
-        const auto& meth = *itr;
-        if (meth.get_name() != name)
-            break;
-
-        if (detail::compare_with_arg_list::compare(meth.get_parameter_infos(), args))
+        for (const auto& meth: itr->second)
         {
-            return meth.invoke_variadic(instance(), args);
+            if (detail::compare_with_arg_list::compare(meth.get_parameter_infos(), args))
+            {
+                return meth.invoke_variadic(instance(), args);
+            }
         }
-
-        ++itr;
     }
 
     return variant();
@@ -475,14 +487,11 @@ variant type::invoke(string_view name, std::vector<argument> args)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-type type::get_by_name(string_view name) RTTR_NOEXCEPT
+type type::get_by_name(std::string_view name) RTTR_NOEXCEPT
 {
-    auto& custom_name_to_id = detail::type_register_private::get_instance().get_custom_name_to_id();
-    auto ret = custom_name_to_id.find(name);
-    if (ret != custom_name_to_id.end())
-        return (*ret);
-
-    return detail::get_invalid_type();
+    //-- TODO (d_dezhko): thread-safe type lookup by name 
+    //--				  Make a bug report to the author	 
+    return detail::type_register_private::get_instance().get_by_custom_name(name);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -559,16 +568,16 @@ destructor type::get_destructor() const RTTR_NOEXCEPT
 
 void type::create_wrapped_value(const argument& arg, variant& var) const
 {
-    if (m_type_data->create_wrapper)
-        m_type_data->create_wrapper(arg, var);
+    if (m_type_data->m_create_wrapper)
+        m_type_data->m_create_wrapper(arg, var);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void type::visit(visitor& vi, detail::type_of_visit visit_type) const RTTR_NOEXCEPT
 {
-    if (m_type_data->visit_type)
-        m_type_data->visit_type(visit_type, vi, *this);
+    if (m_type_data->m_visit_type)
+        m_type_data->m_visit_type(visit_type, vi, *this);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

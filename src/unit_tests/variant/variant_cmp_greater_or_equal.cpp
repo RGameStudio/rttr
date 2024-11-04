@@ -31,7 +31,6 @@
 #include <tuple>
 
 using namespace rttr;
-using namespace std;
 
 template<typename T>
 struct custom_compare_type

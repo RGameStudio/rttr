@@ -46,10 +46,11 @@ namespace detail
  */
 struct data_address_container
 {
-    type    m_type;
-    type    m_wrapped_type;
-    void*   m_data_address;
-    void*   m_data_address_wrapped_type;
+    type        m_type;
+    type        m_wrapped_type;
+    const void* m_data_address = nullptr;
+    const void* m_data_address_wrapped_type = nullptr;
+    bool        m_const = false;
 };
 
 } // end namespace detail

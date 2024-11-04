@@ -851,7 +851,7 @@ TEST_CASE("variant_array_view::get_value_as_ref", "[variant_array_view]")
         variant var_value = array_view.get_value_as_ref(0);
         CHECK(var_value.get_type() == type::get<std::reference_wrapper<int>>());
 
-        auto& value_ref = var_value.get_wrapped_value<int>();
+        auto& value_ref = var_value.get_wrapped_value_unsafe<int>();
         CHECK(value_ref == 1);
 
         variant extr_var = var_value.extract_wrapped_value();

@@ -36,7 +36,6 @@
 #include <string>
 
 using namespace rttr;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -127,7 +126,7 @@ TEST_CASE("move ctor", "[variant]")
 
         variant var_2(std::move(obj));
         CHECK(obj.moved_from == true);
-        CHECK(var_2.get_value<simple_type>().moved == true );
+        CHECK(var_2.get_value_unsafe<simple_type>().moved == true );
     }
 
     SECTION("big type")
@@ -139,7 +138,7 @@ TEST_CASE("move ctor", "[variant]")
 
         variant var_2(std::move(obj));
         CHECK(obj.moved_from == true);
-        CHECK(var_2.get_value<simple_type>().moved == true );
+        CHECK(var_2.get_value_unsafe<simple_type>().moved == true );
     }
 }
 
@@ -157,8 +156,8 @@ bool is_stored_internally(const void* obj, const rttr::variant& var)
 
 struct big_custom_type
 {
-    // two doubles, cannot be stored internally inside variant
-    std::aligned_storage<sizeof(double[2]), 8>::type m_data;
+    // three doubles, cannot be stored internally inside variant
+    std::aligned_storage<sizeof(double[3]), 8>::type m_data;
 };
 
 // this type should be stored internally inside variant class.
@@ -173,44 +172,44 @@ TEST_CASE("check storage type", "[variant]")
 {
     {
         variant var = big_custom_type{};
-        const big_custom_type& obj_big = var.get_value<big_custom_type>();
+        const big_custom_type& obj_big = var.get_value_unsafe<big_custom_type>();
         CHECK( !is_stored_internally(&obj_big, var) );
     }
 
     {
         variant var = small_custom_type{12.0f};
-        const small_custom_type& obj_small = var.get_value<small_custom_type>();
+        const small_custom_type& obj_small = var.get_value_unsafe<small_custom_type>();
         CHECK( is_stored_internally(&obj_small, var) );
     }
 
     {
         variant var = true;
-        const bool& ref_b = var.get_value<bool>();
+        const bool& ref_b = var.get_value_unsafe<bool>();
         CHECK( is_stored_internally(&ref_b, var) );
     }
 
     {
         variant var = 'D';
-        const char& ref_c = var.get_value<char>();
+        const char& ref_c = var.get_value_unsafe<char>();
         CHECK( is_stored_internally(&ref_c, var) );
     }
 
     {
         variant var = 23;
-        const int& ref_i = var.get_value<int>();
+        const int& ref_i = var.get_value_unsafe<int>();
         CHECK( is_stored_internally(&ref_i, var) );
     }
 
     {
         variant var = 42.0;
-        const double& ref_d = var.get_value<double>();
+        const double& ref_d = var.get_value_unsafe<double>();
         CHECK( is_stored_internally(&ref_d, var) );
     }
 
     {
         bool bool_array[4] = {true, false, true, false};
         variant var = bool_array;
-        auto& ref_b_array = var.get_value<bool[4]>();
+        auto& ref_b_array = var.get_value_unsafe<bool[4]>();
         CHECK( is_stored_internally(&ref_b_array, var) );
     }
 }
@@ -282,7 +281,7 @@ TEST_CASE("variant - copy nullptr type", "[variant]")
 
         CHECK(var.is_valid() == true);
         CHECK(var.get_type() == type::get<std::nullptr_t>());
-        CHECK(var.get_value<std::nullptr_t>() == nullptr);
+        CHECK(var.get_value_unsafe<std::nullptr_t>() == nullptr);
     }
 
     SECTION("copy nullptr type")
@@ -292,7 +291,7 @@ TEST_CASE("variant - copy nullptr type", "[variant]")
 
         CHECK(var2.is_valid() == true);
         CHECK(var2.get_type() == type::get<std::nullptr_t>());
-        CHECK(var2.get_value<std::nullptr_t>() == nullptr);
+        CHECK(var2.get_value_unsafe<std::nullptr_t>() == nullptr);
     }
 }
 

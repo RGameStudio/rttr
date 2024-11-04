@@ -31,16 +31,16 @@
 #include <rttr/type>
 
 #define CLASS(CLASS_NAME) struct CLASS_NAME \
-{ virtual ~CLASS_NAME() {} RTTR_ENABLE() virtual int getType() { return dummyIntValue; } int dummyIntValue = 0; };
+{ virtual ~CLASS_NAME() {} RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() virtual int getType() { return dummyIntValue; } int dummyIntValue = 0; };
 
 #define CLASS_INHERIT(CLASS1, CLASS2) struct CLASS1 : CLASS2 \
-{ virtual int getType() { return static_cast<int>(dummyDoubleValue); } RTTR_ENABLE(CLASS2) double dummyDoubleValue = 1; };
+{ virtual int getType() { return static_cast<int>(dummyDoubleValue); } RTTR_DECLARE_ANCESTORS(CLASS2) RTTR_ENABLE_OBJECT_INFO() double dummyDoubleValue = 1; };
 
 #define CLASS_MULTI_INHERIT_2(CLASS1, CLASS2, CLASS3) struct CLASS1 : CLASS2, CLASS3 \
-{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_ENABLE(CLASS2, CLASS3) bool dummyBoolValue = false; };
+{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_DECLARE_ANCESTORS(CLASS2, CLASS3) RTTR_ENABLE_OBJECT_INFO() bool dummyBoolValue = false; };
 
 #define CLASS_MULTI_INHERIT_5(CLASS1, CLASS2, CLASS3, CLASS4, CLASS5, CLASS6) struct CLASS1 : CLASS2, CLASS3, CLASS4, CLASS5, CLASS6 \
-{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_ENABLE(CLASS2, CLASS3, CLASS4, CLASS5, CLASS6) bool dummyBoolValue = true; };
+{ virtual int getType() { return static_cast<int>(dummyBoolValue); } RTTR_DECLARE_ANCESTORS(CLASS2, CLASS3, CLASS4, CLASS5, CLASS6) RTTR_ENABLE_OBJECT_INFO() bool dummyBoolValue = true; };
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // The following class structures has 7 hierarchy levels and is 5 classes wide;
@@ -138,26 +138,30 @@ struct DiamondTop
 {
 
     double foo = 12;
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct DiamondLeft : virtual DiamondTop
 {
     bool _left_var = true;
-    RTTR_ENABLE(DiamondTop)
+    RTTR_DECLARE_ANCESTORS(DiamondTop)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct DiamondRight : virtual DiamondTop
 {
     std::string _text = "Hello World";
-    RTTR_ENABLE(DiamondTop)
+    RTTR_DECLARE_ANCESTORS(DiamondTop)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 
 struct DiamondBottom : DiamondLeft, DiamondRight
 {
     int _finalVar = 42;
-    RTTR_ENABLE(DiamondLeft, DiamondRight)
+    RTTR_DECLARE_ANCESTORS(DiamondLeft, DiamondRight)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

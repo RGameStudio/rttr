@@ -147,7 +147,18 @@ variant_sequential_view::const_iterator variant_sequential_view::insert(const co
 {
     const_iterator itr(&m_view);
 
-    m_view.insert(pos.m_itr, value, itr.m_itr);
+    m_view.insert_copy(pos.m_itr, value, itr.m_itr);
+
+    return itr;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+variant_sequential_view::const_iterator variant_sequential_view::insert_move(const const_iterator& pos, argument value)
+{
+    const_iterator itr(&m_view);
+
+    m_view.insert_move(pos.m_itr, value, itr.m_itr);
 
     return itr;
 }
@@ -174,7 +185,14 @@ void variant_sequential_view::clear()
 
 bool variant_sequential_view::set_value(std::size_t index, argument arg)
 {
-    return m_view.set_value(index, arg);
+    return m_view.set_value_copy(index, arg);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool variant_sequential_view::set_value_move(std::size_t index, argument arg)
+{
+    return m_view.set_value_move(index, arg);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -204,6 +222,13 @@ variant_sequential_view::const_iterator variant_sequential_view::end() const
     m_view.end(itr.m_itr);
 
     return itr;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void variant_sequential_view::reserve(size_t n)
+{
+    m_view.reserve(n);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

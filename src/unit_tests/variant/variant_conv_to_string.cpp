@@ -71,7 +71,7 @@ TEST_CASE("variant::to_string() - from bool", "[variant]")
     CHECK(var.convert<std::string>(&ok) == "true");
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<std::string>()) == true);
-    CHECK(var.get_value<std::string>() == "true");
+    CHECK(var.get_value_unsafe<std::string>() == "true");
 
     // false case
     var = false;
@@ -81,7 +81,7 @@ TEST_CASE("variant::to_string() - from bool", "[variant]")
     CHECK(var.convert<std::string>(&ok) == "false");
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<std::string>()) == true);
-    CHECK(var.get_value<std::string>() == "false");
+    CHECK(var.get_value_unsafe<std::string>() == "false");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ TEST_CASE("variant::to_string() - from char", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "A");
+        CHECK(var.get_value_unsafe<std::string>() == "A");
     }
 
     SECTION("valid conversion negative")
@@ -123,7 +123,23 @@ TEST_CASE("variant::to_string() - from std::string", "[variant]")
     var = std::string("-12");
     CHECK(var.to_string() == "-12");
     REQUIRE(var.convert(type::get<std::string>()) == true);
-    CHECK(var.get_value<std::string>() == "-12");
+    CHECK(var.get_value_unsafe<std::string>() == "-12");
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("variant::to_string() - from std::string_view", "[variant]")
+{
+    variant var = std::string_view("23");
+    REQUIRE(var.can_convert<std::string>() == true);
+    bool ok = false;
+    CHECK(var.to_string(&ok) == "23");
+    CHECK(ok == true);
+
+    var = std::string_view("-12");
+    CHECK(var.to_string() == "-12");
+    REQUIRE(var.convert(type::get<std::string>()) == true);
+    CHECK(var.get_value_unsafe<std::string>() == "-12");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -139,7 +155,7 @@ TEST_CASE("variant::to_string() - from int", "[variant]")
 
         CHECK(ok == true);
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "2147483640");
+        CHECK(var.get_value_unsafe<std::string>() == "2147483640");
     }
 
     SECTION("conversion negative")
@@ -165,7 +181,7 @@ TEST_CASE("variant::to_string() - from float", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "214749");
+        CHECK(var.get_value_unsafe<std::string>() == "214749");
     }
 
     SECTION("conversion negative")
@@ -191,7 +207,7 @@ TEST_CASE("variant::to_string() - from double", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "5000000000.9");
+        CHECK(var.get_value_unsafe<std::string>() == "5000000000.9");
     }
 
     SECTION("conversion negative")
@@ -217,7 +233,7 @@ TEST_CASE("variant::to_string() - from int8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "50");
+        CHECK(var.get_value_unsafe<std::string>() == "50");
     }
 
     SECTION("valid conversion negative")
@@ -243,7 +259,7 @@ TEST_CASE("variant::to_string() - from int16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "32760");
+        CHECK(var.get_value_unsafe<std::string>() == "32760");
     }
 
     SECTION("valid conversion negative")
@@ -269,7 +285,7 @@ TEST_CASE("variant::to_string() - from int32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "2147483640");
+        CHECK(var.get_value_unsafe<std::string>() == "2147483640");
     }
 
     SECTION("valid conversion negative")
@@ -295,7 +311,7 @@ TEST_CASE("variant::to_string() - from int64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "9023372036854775807");
+        CHECK(var.get_value_unsafe<std::string>() == "9023372036854775807");
     }
 
     SECTION("valid conversion negative")
@@ -321,7 +337,7 @@ TEST_CASE("variant::to_string() - from uint8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "50");
+        CHECK(var.get_value_unsafe<std::string>() == "50");
     }
 }
 
@@ -338,7 +354,7 @@ TEST_CASE("variant::to_string() - from uint16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "32760");
+        CHECK(var.get_value_unsafe<std::string>() == "32760");
     }
 }
 
@@ -355,7 +371,7 @@ TEST_CASE("variant::to_string() - from uint32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "32760");
+        CHECK(var.get_value_unsafe<std::string>() == "32760");
     }
 }
 
@@ -372,7 +388,7 @@ TEST_CASE("variant::to_string() - from uint64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "2147483640");
+        CHECK(var.get_value_unsafe<std::string>() == "2147483640");
     }
 }
 
@@ -393,7 +409,7 @@ TEST_CASE("variant::to_string() - from enum", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<std::string>()) == true);
-        CHECK(var.get_value<std::string>() == "VALUE_1");
+        CHECK(var.get_value_unsafe<std::string>() == "VALUE_1");
     }
 
     SECTION("invalid conversion")

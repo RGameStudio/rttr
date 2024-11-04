@@ -56,8 +56,7 @@ endif()
 
 set_target_properties(bench_rttr_cast PROPERTIES DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                                  FOLDER "Benchmarks"
-                                                 INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}"
-                                                 CXX_STANDARD ${MAX_CXX_STANDARD})
+                                                 INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}")
 
 set_compiler_warnings(bench_rttr_cast)
 
@@ -85,8 +84,7 @@ if (BUILD_STATIC)
 
     set_target_properties(bench_rttr_cast_lib PROPERTIES DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                                          FOLDER "Benchmarks"
-                                                         INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}"
-                                                         CXX_STANDARD ${MAX_CXX_STANDARD})
+                                                         INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}")
 
     set_compiler_warnings(bench_rttr_cast_lib)
 
@@ -115,8 +113,7 @@ if (BUILD_WITH_STATIC_RUNTIME_LIBS)
 
     set_target_properties(bench_rttr_cast_s PROPERTIES DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                                        FOLDER "Benchmarks"
-                                                       INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}"
-                                                       CXX_STANDARD ${MAX_CXX_STANDARD})
+                                                       INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}")
 
     set_compiler_warnings(bench_rttr_cast_s)
 
@@ -152,8 +149,7 @@ if (BUILD_WITH_STATIC_RUNTIME_LIBS)
 
         set_target_properties(bench_rttr_cast_lib_s PROPERTIES DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                                                FOLDER "Benchmarks"
-                                                               INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}"
-                                                               CXX_STANDARD ${MAX_CXX_STANDARD})
+                                                               INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}")
 
         set_compiler_warnings(bench_rttr_cast_lib_s)
 

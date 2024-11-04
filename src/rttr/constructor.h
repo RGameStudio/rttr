@@ -33,9 +33,9 @@
 #include "rttr/parameter_info.h"
 #include "rttr/access_levels.h"
 #include "rttr/array_range.h"
-#include "rttr/string_view.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace rttr
@@ -135,7 +135,7 @@ class RTTR_API constructor
          *
          * \return The signature as readable string.
          */
-        string_view get_signature() const RTTR_NOEXCEPT;
+        std::string_view get_signature() const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns an ordered range of \ref parameter_info objects, which matches the signature of the constructor.
@@ -152,7 +152,7 @@ class RTTR_API constructor
          *
          * \return A variant object, containing arbitrary data.
          */
-        variant get_metadata(const variant& key) const;
+        const variant& get_metadata(uint64_t key) const;
 
         /*!
          * \brief Invokes the constructor of type returned by \ref get_instantiated_type().

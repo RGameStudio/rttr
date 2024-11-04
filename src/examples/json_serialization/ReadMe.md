@@ -32,7 +32,8 @@ struct shape
     point2d position;
     std::map<color, point2d> dictionary;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 private:
     bool visible = false;
 };
@@ -46,7 +47,8 @@ struct circle : shape
 
     int no_serialize = 100;
 
-    RTTR_ENABLE(shape)
+    RTTR_DECLARE_ANCESTORS(shape)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 ```
 serialize it like this:

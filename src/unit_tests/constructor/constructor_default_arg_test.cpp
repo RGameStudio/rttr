@@ -141,17 +141,17 @@ TEST_CASE("constructor - default argument test (real ctor)", "[constructor]")
     // using 2 default arguments
     var = ctor.invoke(23);
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using 1 default arguments
     var = ctor.invoke(23, true);
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using NO default arguments
     var = ctor.invoke(23, true, std::string("default text"));
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -177,17 +177,17 @@ TEST_CASE("constructor - default argument test (func ctor)", "[constructor]")
     // using 2 default arguments
     var = ctor.invoke(23);
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using 1 default arguments
     var = ctor.invoke(23, true);
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using NO default arguments
     var = ctor.invoke(23, true, std::string("default text"));
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -213,19 +213,19 @@ TEST_CASE("constructor - default argument test (invoke variadic; real ctor)", "[
     var = ctor.invoke_variadic({23});
 
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using 1 default arguments
     var = ctor.invoke_variadic({23, true});
 
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using NO default arguments
     var = ctor.invoke_variadic({23, true, std::string("default text")});
 
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -251,17 +251,17 @@ TEST_CASE("constructor - default argument test (invoke variadic; func ctor)", "[
     var = ctor.invoke_variadic({23});
 
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using 1 default arguments
     var = ctor.invoke_variadic({23, true});
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 
     // using NO default arguments
     var = ctor.invoke_variadic({23, true, std::string("default text")});
     REQUIRE(var.is_type<create_type>() == true);
-    CHECK(var.get_value<create_type>().get() != nullptr);
+    CHECK(var.get_value_unsafe<create_type>().get() != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////

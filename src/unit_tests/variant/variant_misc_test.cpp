@@ -30,7 +30,6 @@
 #include <rttr/type>
 
 using namespace rttr;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -108,21 +107,21 @@ TEST_CASE("variant - get_value()", "[variant]")
         std::string text = "hello world";
         variant var = text;
 
-        auto& value = var.get_value<std::string>();
+        auto& value = var.get_value_unsafe<std::string>();
         value = "world";
         using value_t = detail::remove_reference_t<decltype(value)>;
 
         static_assert(!std::is_const<value_t>::value, "Provide non-const getter!");
 
-        CHECK(var.get_value<std::string>() == "world");
+        CHECK(var.get_value_unsafe<std::string>() == "world");
     }
 
-    SECTION("check get_value() const version")
+    SECTION("check get_value_unsafe() const version")
     {
         std::string text = "hello world";
         const variant var = text;
 
-        auto& value = var.get_value<std::string>();
+        auto& value = var.get_value_unsafe<std::string>();
 
         using value_t = detail::remove_reference_t<decltype(value)>;
         static_assert(std::is_const<value_t>::value, "Provide non-const getter!");
@@ -132,7 +131,7 @@ TEST_CASE("variant - get_value()", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-TEST_CASE("variant - get_wrapped_value", "[variant]")
+TEST_CASE("variant - get_wrapped_value_unsafe", "[variant]")
 {
     int foo = 12;
     variant var = std::ref(foo);
@@ -140,7 +139,7 @@ TEST_CASE("variant - get_wrapped_value", "[variant]")
     CHECK(var.get_type() == type::get<std::reference_wrapper<int>>());
     REQUIRE(var.get_type().get_wrapped_type() == type::get<int>());
     REQUIRE(var.extract_wrapped_value().is_valid() == true);
-    CHECK(var.extract_wrapped_value().get_value<int>() == 12);
+    CHECK(var.extract_wrapped_value().get_value_unsafe<int>() == 12);
 
     int* bar = &foo;
     var = std::ref(bar);
@@ -148,7 +147,7 @@ TEST_CASE("variant - get_wrapped_value", "[variant]")
     CHECK(var.get_type() == type::get<std::reference_wrapper<int*>>());
     REQUIRE(var.get_type().get_wrapped_type() == type::get<int*>());
     REQUIRE(var.extract_wrapped_value().is_valid() == true);
-    CHECK(*var.extract_wrapped_value().get_value<int*>() == foo);
+    CHECK(*var.extract_wrapped_value().get_value_unsafe<int*>() == foo);
 
     int** bar2 = &bar;
     var = std::cref(bar2);
@@ -156,15 +155,68 @@ TEST_CASE("variant - get_wrapped_value", "[variant]")
     CHECK(var.get_type() == type::get<std::reference_wrapper<int** const>>());
     REQUIRE(var.get_type().get_wrapped_type() == type::get<int** const>());
     REQUIRE(var.extract_wrapped_value().is_valid() == true);
-    CHECK(**var.extract_wrapped_value().get_value<int** const>() == foo);
+    CHECK(**var.extract_wrapped_value().get_value_unsafe<int** const>() == foo);
 
 
     auto ptr = detail::make_unique<int>(24);
     var = std::ref(ptr);
     CHECK(var.get_type().is_wrapper() == true);
     REQUIRE(var.get_type().get_wrapped_type() == type::get<std::unique_ptr<int>>());
-    CHECK(*var.get_wrapped_value<std::unique_ptr<int>>().get() == 24);
+    CHECK(*var.get_wrapped_value_unsafe<std::unique_ptr<int>>().get() == 24);
     CHECK(var.extract_wrapped_value().is_valid() == false);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("variant - assign_wrapped_value", "[variant]")
+{
+    int foo = 1;
+    variant var = std::ref(foo);
+    CHECK(var.assign_wrapped_value(2));
+    CHECK(foo == 2);
+    CHECK(!var.assign_wrapped_value("bar"));
+    CHECK(foo == 2);
+
+    auto bar = std::make_shared<int>(3);
+    var = bar;
+    CHECK(var.assign_wrapped_value(4));
+    CHECK(*bar == 4);
+    CHECK(!var.assign_wrapped_value("bar"));
+    CHECK(*bar == 4);
+
+    var = foo;
+    CHECK(!var.assign_wrapped_value(5)); // assign for non-wrapper type should fail
+    CHECK(foo == 2);
+
+    var = std::cref(foo);
+    CHECK(!var.assign_wrapped_value(6)); // assign through const ref is impossible
+    CHECK(foo == 2);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TEST_CASE("variant - get_pointer_value", "[variant]")
+{
+    int foo = 12;
+    variant var = &foo;
+    CHECK(var.get_type().is_pointer() == true);
+    CHECK(var.get_type() == type::get<int*>());
+    REQUIRE(var.extract_pointer_value().is_valid() == true);
+    CHECK(var.extract_pointer_value().get_value_unsafe<int>() == foo);
+
+    int* bar = &foo;
+    var = &bar;
+    CHECK(var.get_type().is_pointer() == true);
+    CHECK(var.get_type() == type::get<int**>());
+    REQUIRE(var.extract_pointer_value().is_valid() == true);
+    CHECK(*var.extract_pointer_value().get_value_unsafe<int*>() == foo);
+
+    int** bar2 = &bar;
+    var = static_cast<int*** const>(&bar2);
+    CHECK(var.get_type().is_pointer() == true);
+    CHECK(var.get_type() == type::get<int*** const>());
+    REQUIRE(var.extract_pointer_value().is_valid() == true);
+    CHECK(**var.extract_pointer_value().get_value_unsafe<int** const>() == foo);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

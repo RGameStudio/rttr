@@ -86,18 +86,18 @@ TEST_CASE("method - default argument test", "[method]")
     variant var = meth.invoke(obj, 23);
     REQUIRE(var.is_type<bool>());
     // invoke was successfully
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
     // using one default argument
     var = meth.invoke(obj, 23, std::string("This is a default"));
     REQUIRE(var.is_type<bool>());
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
     // using no default argument
     const int* ptr = nullptr;
     var = meth.invoke(obj, 23, std::string("This is a default"), ptr);
     REQUIRE(var.is_type<bool>());
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
     // too less arguments
     var = meth.invoke(obj);
@@ -121,19 +121,19 @@ TEST_CASE("method - default argument test (invoke_variadic)", "[method]")
     variant var = meth.invoke_variadic(obj, {23});
     REQUIRE(var.is_type<bool>());
     // invoke was successfully
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
     // using one default argument
     var = meth.invoke_variadic(obj, {23, std::string("This is a default")});
 
     REQUIRE(var.is_type<bool>());
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
     // using no default argument
     const int* ptr = nullptr;
     var = meth.invoke_variadic(obj, {23, std::string("This is a default"), ptr});
     REQUIRE(var.is_type<bool>());
-    CHECK(var.get_value<bool>() == true);
+    CHECK(var.get_value_unsafe<bool>() == true);
 
 
     // too less arguments

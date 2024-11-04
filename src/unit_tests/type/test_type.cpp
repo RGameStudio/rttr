@@ -59,16 +59,21 @@ struct type_metadata_test
 
 };
 
+inline static constexpr uint64_t c_test_meta_key = rttr::hash_string("Test");
+inline static constexpr uint64_t c_other_key_meta_key = rttr::hash_string("other_key");
+inline static constexpr uint64_t c_bar_meta_key = rttr::hash_string("bar");
+inline static constexpr uint64_t c_foobar_meta_key = rttr::hash_string("foo");
+
 static const char* key_data = "Test";
 
 RTTR_REGISTRATION
 {
     registration::class_<type_metadata_test>("type_metadata_test")
             (
-                metadata(key_data, "foo"),
-                metadata("other_key", "bar"),
-                metadata("bar", 42),
-                metadata("foobar", "hello")
+                metadata(c_test_meta_key, "foo"),
+                metadata(c_other_key_meta_key, "bar"),
+                metadata(c_bar_meta_key, 42),
+                metadata(c_foobar_meta_key, "hello")
             );
 }
 
@@ -79,19 +84,19 @@ TEST_CASE("Test rttr::type - BasicTests", "[type]")
     SECTION("simple basic check")
     {
         int intVar = 23;
-        const type intTypeInfo = type::get(intVar);
-        CHECK(intTypeInfo.get_name() == "int");
+        const type intTypeInfo = type::get<decltype(intVar)>();
+        CHECK(intTypeInfo.get_name() == "int32");
         CHECK(intTypeInfo == type::get<int>());
 
         bool boolVar = true;
-        const type boolTypeInfo = type::get(boolVar);
+        const type boolTypeInfo = type::get<decltype(boolVar)>();
         CHECK(boolTypeInfo.get_name() == "bool");
         CHECK(boolTypeInfo == type::get<bool>());
 
         CHECK(boolTypeInfo != intTypeInfo);
 
         int ***intPtr = nullptr;
-        CHECK(type::get<int***>() == type::get(intPtr));
+        CHECK(type::get<int***>() == type::get<decltype(intPtr)>());
 
     }
 
@@ -99,13 +104,13 @@ TEST_CASE("Test rttr::type - BasicTests", "[type]")
     {
         int intVar = 23;
         int* intPtrVar = &intVar;
-        const type intPtrTypeInfo = type::get(intPtrVar);
-        CHECK(intPtrTypeInfo.get_name() == "int*");
+        const type intPtrTypeInfo = type::get<decltype(intPtrVar)>();
+        CHECK(intPtrTypeInfo.get_name() == "int32*");
         CHECK(intPtrTypeInfo == type::get<int*>());
 
         bool boolVar = true;
         bool* boolPtrVar = &boolVar;
-        const type boolPtrTypeInfo = type::get(boolPtrVar);
+        const type boolPtrTypeInfo = type::get<decltype(boolPtrVar)>();
         CHECK(boolPtrTypeInfo.get_name() == "bool*");
         CHECK(boolPtrTypeInfo == type::get<bool*>());
 
@@ -116,20 +121,20 @@ TEST_CASE("Test rttr::type - BasicTests", "[type]")
     {
         int intVar = 42;
         const int constIntVar = 42;
-        CHECK(type::get(intVar) == type::get(constIntVar));
-        CHECK(type::get<int>() == type::get(constIntVar));
+        CHECK(type::get<decltype(intVar)>() == type::get<decltype(constIntVar)>());
+        CHECK(type::get<int>() == type::get<decltype(constIntVar)>());
         CHECK(type::get<int>() == type::get<const int>());
         CHECK(type::get<int>() == type::get<const int &>());
 
-        CHECK(type::get<int*>() == type::get(&intVar));
+        CHECK(type::get<int*>() == type::get<decltype(&intVar)>());
         CHECK(type::get<int*>() == type::get<int *const>());
-        CHECK(type::get<const int*>() == type::get(&constIntVar));
+        CHECK(type::get<const int*>() == type::get<decltype(&constIntVar)>());
         CHECK(type::get<const int*>() == type::get<const int *const>());
 
         const int& intConstRef = intVar;
-        CHECK(type::get<int>() == type::get(intConstRef));
+        CHECK(type::get<int>() == type::get<decltype(intConstRef)>());
         int*** ptr = nullptr;
-        CHECK(type::get<int***>() == type::get(ptr));
+        CHECK(type::get<int***>() == type::get<decltype(ptr)>());
     }
 }
 
@@ -139,25 +144,25 @@ TEST_CASE("Test rttr::type - ComplexerTypes", "[type]")
 {
     std::vector<int> myList;
     std::vector<int> myList2;
-    CHECK(type::get<std::vector<int> >() == type::get(myList));
-    CHECK(type::get(myList) == type::get(myList2));
+    CHECK(type::get<std::vector<int> >() == type::get<decltype(myList)>());
+    CHECK(type::get<decltype(myList)>() == type::get<decltype(myList2)>());
 
     IntToStringMap myMap;
     std::map<int, std::string> myMap2;
 
     CHECK((type::get<std::map<int, std::string> >() == type::get<IntToStringMap>()));
-    CHECK((type::get<std::map<int, std::string> >() == type::get(myMap)));
-    CHECK((type::get<IntToStringMap>() == type::get(myMap)));
-    CHECK((type::get(myMap) == type::get(myMap2)));
+    CHECK((type::get<std::map<int, std::string> >() == type::get<decltype(myMap)>()));
+    CHECK((type::get<IntToStringMap>() == type::get<decltype(myMap)>()));
+    CHECK((type::get<decltype(myMap)>() == type::get<decltype(myMap2)>()));
 
-    CHECK((type::get(myMap) != type::get<std::map<int, int> >()));
+    CHECK((type::get<decltype(myMap)>() != type::get<std::map<int, int> >()));
 
     // check typedef
     typedef std::map<int, std::string> MyMap;
     CHECK((type::get<MyMap>() == type::get<std::map<int, std::string>>()));
     MyMap obj;
     std::map<int, std::string> obj2;
-    CHECK(type::get(obj) == type::get(obj2));
+    CHECK(type::get<decltype(obj)>() == type::get<decltype(obj2)>());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -278,7 +283,7 @@ TEST_CASE("Test rttr::type - Virtual Inheritance", "[type]")
 TEST_CASE("type - get_base_classes()", "[type]")
 {
     DiamondBottom d;
-    const auto base_list_range = type::get(d).get_base_classes();
+    const auto base_list_range = d.get_type().get_base_classes();
     REQUIRE(base_list_range.size() == 3);
 
     std::vector<type> base_list(base_list_range.cbegin(), base_list_range.cend());
@@ -304,8 +309,8 @@ TEST_CASE("type - is_derived_from()", "[type]")
 {
     DiamondBottom d;
 
-    REQUIRE(type::get(d).is_derived_from(type::get<DiamondTop>())   == true); // dynamic
-    REQUIRE(type::get(d).is_derived_from<DiamondTop>()              == true); // static
+    REQUIRE(d.get_type().is_derived_from(type::get<DiamondTop>())   == true); // dynamic
+    REQUIRE(d.get_type().is_derived_from<DiamondTop>()              == true); // static
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -316,14 +321,14 @@ TEST_CASE("Test rttr::type - TypeId/ClassInheritance", "[type]")
     ClassSingleBase& baseSingle     = instance6A;
     ClassSingleBase* baseSinglePtr  = &instance6A;
 
-    CHECK(type::get<ClassSingleBase*>() == type::get(baseSinglePtr));
+    CHECK(type::get<ClassSingleBase*>() == type::get<decltype(baseSinglePtr)>());
 
-    CHECK(type::get<ClassSingle6A>() == type::get(baseSingle));
-    CHECK(type::get<ClassSingleBase*>() == type::get(&baseSingle));
+    CHECK(type::get<ClassSingle6A>() == baseSingle.get_type());
+    CHECK(type::get<ClassSingleBase*>() == type::get<decltype(&baseSingle)>());
 
     ClassSingle3A instance3A;
-    CHECK(type::get<ClassSingle3A>() == type::get(instance3A));
-    CHECK(type::get<ClassSingle6A>() != type::get(instance3A));
+    CHECK(type::get<ClassSingle3A>() == instance3A.get_type());
+    CHECK(type::get<ClassSingle6A>() != instance3A.get_type());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -481,6 +486,26 @@ TEST_CASE("Test rttr::type - is_sequential_container", "[type]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("Test rttr::type - get_container_key/value_type", "[type]")
+{
+    CHECK(!type::get<int>().get_container_key_type().is_valid());
+    CHECK(!type::get<int>().get_container_value_type().is_valid());
+
+    CHECK(!type::get<std::vector<int>>().get_container_key_type().is_valid());
+    CHECK(type::get<std::vector<int>>().get_container_value_type() == type::get<int>());
+
+    CHECK(!type::get<int[5]>().get_container_key_type().is_valid());
+    CHECK(type::get<int[5]>().get_container_value_type() == type::get<int>());
+
+    CHECK(type::get<std::set<std::string>>().get_container_key_type() == type::get<std::string>());
+    CHECK(!type::get<std::set<std::string>>().get_container_value_type().is_valid());
+
+    CHECK((type::get<std::map<std::string, int>>().get_container_key_type() == type::get<std::string>()));
+    CHECK((type::get<std::map<std::string, int>>().get_container_value_type() == type::get<int>()));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("Test rttr::type - Check is_wrapper", "[type]")
 {
     CHECK(type::get<std::shared_ptr<int>>().is_wrapper()        == true);
@@ -489,7 +514,7 @@ TEST_CASE("Test rttr::type - Check is_wrapper", "[type]")
     CHECK(type::get<std::weak_ptr<int>>().is_wrapper()          == true);
 
     std::shared_ptr<ClassSingle6A> sharedPtr = std::make_shared<ClassSingle6A>();
-    CHECK(type::get(sharedPtr).is_wrapper()         == true);
+    CHECK(type::get<decltype(sharedPtr)>().is_wrapper()         == true);
 
     CHECK(type::get<int>().is_wrapper()             == false);
     CHECK(type::get<float>().is_wrapper()           == false);
@@ -567,8 +592,8 @@ TEST_CASE("Test rttr::type - get_template_arguments()", "[type]")
     {
         auto type_list = type::get<std::array<int, 100>>().get_template_arguments();
         CHECK(type_list.size() == 2);
-        CHECK(*type_list.begin()     == type::get<int>());
-        CHECK(*(++type_list.begin()) == type::get<std::size_t>());
+        CHECK(type_list.begin()->m_type     == type::get<int>());
+        CHECK((++type_list.begin())->m_type == type::get<std::size_t>());
     }
 
     SECTION("valid test - custom type")
@@ -595,7 +620,7 @@ TEST_CASE("Test rttr::type - Check get_wrapped_type", "[type]")
     CHECK(type::get<std::reference_wrapper<const int>>().get_wrapped_type()   == type::get<int>());
 
     std::shared_ptr<ClassSingle6A> sharedPtr = std::make_shared<ClassSingle6A>();
-    CHECK(type::get(sharedPtr).get_wrapped_type()           == type::get<ClassSingle6A*>());
+    CHECK(type::get<decltype(sharedPtr)>().get_wrapped_type()           == type::get<ClassSingle6A*>());
 
     // negative test
     CHECK(type::get<int>().get_wrapped_type().is_valid()    == false);
@@ -627,13 +652,13 @@ TEST_CASE("Test rttr::type - get_metadata()", "[type]")
 {
     auto t = type::get<type_metadata_test>();
 
-    CHECK(t.get_metadata(key_data).is_valid() == true);
-    CHECK(t.get_metadata("other_key").is_valid() == true);
-    CHECK(t.get_metadata("bar").is_valid() == true);
-    CHECK(t.get_metadata("foobar").is_valid() == true);
+    CHECK(t.get_metadata(c_test_meta_key).is_valid() == true);
+    CHECK(t.get_metadata(c_other_key_meta_key).is_valid() == true);
+    CHECK(t.get_metadata(c_bar_meta_key).is_valid() == true);
+    CHECK(t.get_metadata(c_foobar_meta_key).is_valid() == true);
 
     // negative
-    CHECK(t.get_metadata("novalid key").is_valid() == false);
+    CHECK(t.get_metadata(rttr::hash_string("novalid key")).is_valid() == false);
 }
 
 

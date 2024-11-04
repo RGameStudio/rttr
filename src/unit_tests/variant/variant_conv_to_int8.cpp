@@ -58,7 +58,7 @@ TEST_CASE("variant::to_int8() - from bool", "[variant]")
     CHECK(var.convert<int8_t>(&ok) == 1);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<int8_t>()) == true);
-    CHECK(var.get_value<int8_t>() == 1);
+    CHECK(var.get_value_unsafe<int8_t>() == 1);
 
     // false case
     var = false;
@@ -68,7 +68,7 @@ TEST_CASE("variant::to_int8() - from bool", "[variant]")
     CHECK(var.convert<int8_t>(&ok) == 0);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<int8_t>()) == true);
-    CHECK(var.get_value<int8_t>() == 0);
+    CHECK(var.get_value_unsafe<int8_t>() == 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ TEST_CASE("variant::to_int8() - from char", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 65);
+        CHECK(var.get_value_unsafe<int8_t>() == 65);
     }
 
 RTTR_BEGIN_DISABLE_CONDITIONAL_EXPR_WARNING
@@ -117,7 +117,7 @@ TEST_CASE("variant::to_int8() - from std::string", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 23);
+        CHECK(var.get_value_unsafe<int8_t>() == 23);
     }
 
     SECTION("valid conversion negative")
@@ -165,6 +165,65 @@ TEST_CASE("variant::to_int8() - from std::string", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant::to_int8() - from std::string_view", "[variant]")
+{
+    SECTION("valid conversion positive")
+    {
+        variant var = std::string_view("23");
+        REQUIRE(var.can_convert<int8_t>() == true);
+        bool ok = false;
+        CHECK(var.to_int8(&ok) == 23);
+        CHECK(ok == true);
+
+        REQUIRE(var.convert(type::get<int8_t>()) == true);
+        CHECK(var.get_value_unsafe<int8_t>() == 23);
+    }
+
+    SECTION("valid conversion negative")
+    {
+        variant var = std::string_view("-12");
+        bool ok = false;
+        CHECK(var.to_int8(&ok) == -12);
+        CHECK(ok == true);
+        CHECK(var.convert(type::get<int8_t>()) == true);
+    }
+
+    SECTION("too big")
+    {
+        variant var = std::string_view("512");
+        bool ok = false;
+        CHECK(var.to_int8(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int8_t>()) == false);
+    }
+
+    SECTION("too small")
+    {
+        variant var = std::string_view("-512");
+        bool ok = false;
+        CHECK(var.to_int8(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int8_t>()) == false);
+    }
+
+    SECTION("invalid conversion")
+    {
+        variant var = std::string_view("text 34 and text");
+        bool ok = false;
+        CHECK(var.to_int8(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int8_t>()) == false);
+
+        var = std::string_view("34 and text");
+        ok = false;
+        CHECK(var.to_int8(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<int8_t>()) == false);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant::to_int8() - from int", "[variant]")
 {
     SECTION("valid conversion positive")
@@ -176,7 +235,7 @@ TEST_CASE("variant::to_int8() - from int", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 50);
+        CHECK(var.get_value_unsafe<int8_t>() == 50);
     }
 
     SECTION("valid conversion negative")
@@ -220,7 +279,7 @@ TEST_CASE("variant::to_int8() - from float", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 1);
+        CHECK(var.get_value_unsafe<int8_t>() == 1);
     }
 
     SECTION("valid conversion negative")
@@ -264,7 +323,7 @@ TEST_CASE("variant::to_int8() - from double", "[variant]")
 
         CHECK(ok == true);
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 1);
+        CHECK(var.get_value_unsafe<int8_t>() == 1);
     }
 
     SECTION("valid conversion negative")
@@ -308,7 +367,7 @@ TEST_CASE("variant::to_int8() - from int8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 50);
+        CHECK(var.get_value_unsafe<int8_t>() == 50);
     }
 
     SECTION("valid conversion negative")
@@ -334,7 +393,7 @@ TEST_CASE("variant::to_int8() - from int16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("valid conversion negative")
@@ -378,7 +437,7 @@ TEST_CASE("variant::to_int8() - from int32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("valid conversion negative")
@@ -422,7 +481,7 @@ TEST_CASE("variant::to_int8() - from int64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("valid conversion negative")
@@ -466,7 +525,7 @@ TEST_CASE("variant::to_int8() - from uint8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("too big")
@@ -492,7 +551,7 @@ TEST_CASE("variant::to_int8() - from uint16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("too big")
@@ -518,7 +577,7 @@ TEST_CASE("variant::to_int8() - from uint32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("too big")
@@ -544,7 +603,7 @@ TEST_CASE("variant::to_int8() - from uint64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == int8_t(50));
+        CHECK(var.get_value_unsafe<int8_t>() == int8_t(50));
     }
 
     SECTION("too big")
@@ -554,7 +613,7 @@ TEST_CASE("variant::to_int8() - from uint64_t", "[variant]")
         CHECK(var.to_int8(&ok) == 0);
         CHECK(ok == false);
         REQUIRE(var.convert(type::get<int8_t>()) == false);
-        CHECK(var.get_value<uint64_t>() == uint64_t(1000));
+        CHECK(var.get_value_unsafe<uint64_t>() == uint64_t(1000));
     }
 }
 
@@ -571,7 +630,7 @@ TEST_CASE("variant::to_int8() - from enum", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<int8_t>()) == true);
-        CHECK(var.get_value<int8_t>() == 100);
+        CHECK(var.get_value_unsafe<int8_t>() == 100);
     }
 
     SECTION("valid conversion negative")

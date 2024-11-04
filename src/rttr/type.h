@@ -29,13 +29,13 @@
 #define RTTR_TYPE_H_
 
 #include "rttr/detail/base/core_prerequisites.h"
-#include "rttr/string_view.h"
 #include "rttr/array_range.h"
 #include "rttr/filter_item.h"
 
 #include <type_traits>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <memory>
 #include <cstdint>
 
@@ -52,6 +52,7 @@ class type;
 class instance;
 class argument;
 class visitor;
+struct template_argument_data;
 
 template<typename Target_Type, typename Source_Type>
 Target_Type rttr_cast(Source_Type object) RTTR_NOEXCEPT;
@@ -73,7 +74,7 @@ class property_wrapper_base;
 RTTR_LOCAL RTTR_INLINE type create_type(type_data*) RTTR_NOEXCEPT;
 
 template<typename T>
-RTTR_LOCAL std::unique_ptr<type_data> make_type_data();
+RTTR_LOCAL type_data make_type_data();
 
 template<typename T, typename Tp, typename Converter>
 struct variant_data_base_policy;
@@ -99,7 +100,7 @@ RTTR_LOCAL RTTR_INLINE type get_type_from_instance(const T*) RTTR_NOEXCEPT;
  *
  * Retrieve %type
  * ------------------
- * A type object **cannot** be created. It is only possible to retrieve a type object via three static template member functions:
+ * Default-constructed type object represents invalid type. It is possible to retrieve a type object via three static template member functions:
  *
  * ### type::get<T>() ###
  *
@@ -122,52 +123,6 @@ RTTR_LOCAL RTTR_INLINE type get_type_from_instance(const T*) RTTR_NOEXCEPT;
  *
  * \remark Before using the function \ref type::get_by_name(), you have to use one time the function via \ref type::get<T>(), otherwise the type is not registered in the type system.
  *
- * ### type::get<T>(T&& obj) ###
- *
- * This function takes a universal reference and returns from every given object the corresponding type object.
- *
- * \code{.cpp}
- *      int int_obj;
- *      int* int_obj_ptr = &int_obj;
- *      const int* c_int_obj_ptr = int_obj_ptr;
- *
- *      type::get<int>()         == type::get(int_obj);        // yields to true
- *      type::get<int*>()        == type::get(int_obj_ptr);    // yields to true
- *      type::get<const int*>()  == type::get(c_int_obj_ptr);  // yields to true
- * \endcode
- *
- * When this function is called for a glvalue expression whose type is a polymorphic class type,
- * then the result refers to a \ref type object representing the type of the most derived object.
- *
- * \code{.cpp}
- *      struct Base { RTTR_ENABLE() };
- *      struct Derived : Base { RTTR_ENABLE(Base) };
- *      //...
- *      Derived d;
- *      Base& base = d;
- *      type::get<Derived>()   == type::get(base);      // yields to true
- *      type::get<Base>()      == type::get(base);      // yields to false
- *
- *      // remark, when called with pointers:
- *      Base* base_ptr = &d;
- *      type::get<Derived>()   == type::get(base_ptr);  // yields to false
- *      type::get<Base*>()     == type::get(base_ptr);  // yields to true
- * \endcode
- *
- * \remark If the type of the expression is a cv-qualified type, the result of the rttr::type::get expression refers to a rttr::type object representing the cv-unqualified type.
- *
- * \code{.cpp}
- *      class D { ... };
- *      D d1;
- *      const D d2;
- *      type::get(d1)  == type::get(d2);         // yields true
- *      type::get<D>() == type::get<const D>();  // yields true
- *      type::get<D>() == type::get(d2);         // yields true
- *      type::get<D>() == type::get<const D&>(); // yields true
- *      type::get<D>() == type::get<const D*>(); // yields false
- * \endcode
- * Any `top level` cv-qualifier of the given type `T` will be removed.
- *
  *
  * Copying and Assignment
  * ----------------------
@@ -178,6 +133,11 @@ class RTTR_API type
 {
     public:
         typedef uintptr_t type_id;
+
+        /*!
+         * Constructs an empty and invalid type object.
+         */
+        type() RTTR_NOEXCEPT;
 
         /*!
          * \brief Assigns a type to another one.
@@ -253,7 +213,7 @@ class RTTR_API type
          *
          * \return The type name.
          */
-        RTTR_INLINE string_view get_name() const RTTR_NOEXCEPT;
+        RTTR_INLINE std::string_view get_name() const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns true if this type is valid, that means the type holds valid data to a type.
@@ -310,19 +270,6 @@ class RTTR_API type
         RTTR_LOCAL static type get() RTTR_NOEXCEPT;
 
         /*!
-         * \brief Returns a type object for the given instance \a object.
-         *
-         * \remark If the type of the expression is a cv-qualified type, the result of the type::get() expression refers to a
-         *         type object representing the cv-unqualified type.
-         *         When type::get() is applied to a glvalue expression whose type is a polymorphic class type,
-         *         the result refers to a type object representing the type of the most derived object.
-         *
-         * \return type for an \a object of type \a T.
-         */
-        template<typename T>
-        RTTR_LOCAL static type get(T&& object) RTTR_NOEXCEPT;
-
-        /*!
          * \brief Returns the type object with the given name \p name.
          *
          * \remark The search for the type is case sensitive. White spaces will be ignored.
@@ -332,7 +279,7 @@ class RTTR_API type
          *
          * \return \ref type object with the name \p name.
          */
-        static type get_by_name(string_view name) RTTR_NOEXCEPT;
+        static type get_by_name(std::string_view name) RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a range of all registered type objects.
@@ -398,7 +345,7 @@ class RTTR_API type
          *
          * \see is_template_instantiation()
          */
-        array_range<type> get_template_arguments() const RTTR_NOEXCEPT;
+        array_range<template_argument_data> get_template_arguments() const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns true whether the given type represents an enumeration.
@@ -474,6 +421,18 @@ class RTTR_API type
         RTTR_INLINE bool is_sequential_container() const RTTR_NOEXCEPT;
 
         /*!
+         * \brief Returns key type if this type is an associative container;
+         *        otherwise the returned value is invalid type.
+        */
+        type get_container_key_type() const RTTR_NOEXCEPT;
+
+        /*!
+         * \brief Returns value type if this type is a sequential or non-key-only associative container;
+         *        otherwise the returned value is invalid type.
+        */
+        type get_container_value_type() const RTTR_NOEXCEPT;
+
+        /*!
          * \brief Returns true whether the given type represents a pointer.
          *        e.g. `int*`, or `bool*`
          *
@@ -517,7 +476,7 @@ class RTTR_API type
         /*!
          * \brief Returns true if this type is derived from the given type \p other, otherwise false.
          *
-         * \remark Make sure that the complete class hierarchy has the macro RTTR_ENABLE
+         * \remark Make sure that the complete class hierarchy has macros RTTR_DECLARE_ROOT and RTTR_DECLARE_ANCESTORS
          *         inside the class declaration, otherwise the returned information of this function
          *         is **not correct**.
          *
@@ -528,7 +487,7 @@ class RTTR_API type
         /*!
          * \brief Returns true if this type is derived from the given type \a T, otherwise false.
          *
-         * \remark Make sure that the complete class hierarchy has the macro RTTR_ENABLE
+         * \remark Make sure that the complete class hierarchy has macros RTTR_DECLARE_ROOT and RTTR_DECLARE_ANCESTORS
          *         inside the class declaration, otherwise the returned information of this function
          *         is **not correct**.
          *
@@ -540,7 +499,7 @@ class RTTR_API type
         /*!
          * \brief Returns true if this type is the base class from the given type \p other, otherwise false.
          *
-         * \remark Make sure that the complete class hierarchy has the macro RTTR_ENABLE
+         * \remark Make sure that the complete class hierarchy has macros RTTR_DECLARE_ROOT and RTTR_DECLARE_ANCESTORS
          *         inside the class declaration, otherwise the returned information of this function
          *         is **not correct**.
          *
@@ -551,7 +510,7 @@ class RTTR_API type
          /*!
          * \brief Returns true if this type is the base class from the given type \a T, otherwise false.
          *
-         * \remark Make sure that the complete class hierarchy has the macro RTTR_ENABLE
+         * \remark Make sure that the complete class hierarchy has macros RTTR_DECLARE_ROOT and RTTR_DECLARE_ANCESTORS
          *         inside the class declaration, otherwise the returned information of this function
          *         is **not correct**.
          *
@@ -563,10 +522,10 @@ class RTTR_API type
         /*!
          * \brief Returns a range of all base classes of this type.
          *
-         * \remark Make sure that the complete class hierarchy has the macro RTTR_ENABLE
+         * \remark Make sure that the complete class hierarchy has macros RTTR_DECLARE_ROOT and RTTR_DECLARE_ANCESTORS
          *         inside the class declaration, otherwise the returned information of this function
          *         is **not correct**. The order of this list depends on the declaration order of classes
-         *         inside RTTR_ENABLE. E.g. RTTR_ENABLE(A1, A2) => A1 will be for A2 in the list.
+         *         inside RTTR_DECLARE_ANCESTORS. E.g. RTTR_DECLARE_ANCESTORS(A1, A2) => A1 will be for A2 in the list.
          *         Accordingly the root (or parent or base) class is always the first type in the list.
          *
          * \return A range of types.
@@ -576,10 +535,10 @@ class RTTR_API type
         /*!
          * \brief Returns a range of all derived classes of this type.
          *
-         * \remark Make sure that the complete class hierarchy has the macro RTTR_ENABLE
+         * \remark Make sure that the complete class hierarchy has macros RTTR_DECLARE_ROOT and RTTR_DECLARE_ANCESTORS
          *         inside the class declaration, otherwise the returned information of this function
          *         is **not correct**. The order of this list depends on the declaration order of classes
-         *         inside RTTR_ENABLE. E.g. RTTR_ENABLE(A1, A2) => A1 will be for A2 in the list.
+         *         inside RTTR_DECLARE_ANCESTORS. E.g. RTTR_DECLARE_ANCESTORS(A1, A2) => A1 will be for A2 in the list.
          *
          * \return A range of type objects.
          */
@@ -597,7 +556,7 @@ class RTTR_API type
          *
          * \return A variant object, containing arbitrary data.
          */
-        variant get_metadata(const variant& key) const;
+        const variant& get_metadata(uint64_t key) const;
 
         /*!
          * \brief Returns a public constructor whose parameters match the types in the specified list.
@@ -630,7 +589,7 @@ class RTTR_API type
          * \code{.cpp}
          * #include <rttr/registration>
          *
-         * struct my_struct { my_struct() {} my_struct(int) {} my_struct(bool) {} RTTR_ENABLE() };
+         * struct my_struct { my_struct() {} my_struct(int) {} my_struct(bool) {} };
          *
          * RTTR_REGISTRATION
          * {
@@ -709,7 +668,7 @@ class RTTR_API type
          *
          * \return A property with name \p name.
          */
-        property get_property(string_view name) const RTTR_NOEXCEPT;
+        property get_property(std::string_view name) const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a range of all registered *public* properties for this type and
@@ -733,8 +692,8 @@ class RTTR_API type
          * \code{.cpp}
          * #include <rttr/registration>
          *
-         * struct base { int p1, p2; RTTR_ENABLE() };
-         * struct derived : base { int p3; static const int p4 = 23; RTTR_ENABLE(base) };
+         * struct base { int p1, p2; RTTR_DECLARE_ROOT() };
+         * struct derived : base { int p3; static const int p4 = 23; RTTR_DECLARE_ANCESTORS(base) };
          *
          * RTTR_REGISTRATION
          * {
@@ -785,7 +744,7 @@ class RTTR_API type
          *
          * \return A property with name \p name.
          */
-        static property get_global_property(string_view name) RTTR_NOEXCEPT;
+        static property get_global_property(std::string_view name) RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a range of all registered global properties.
@@ -806,14 +765,14 @@ class RTTR_API type
          *
          * \return A variant containing the value of the property.
          */
-        variant get_property_value(string_view name, instance obj) const;
+        variant get_property_value(std::string_view name, instance obj) const;
 
         /*!
          * \brief Returns the property value of property named \p name.
          *
          * \return A variant containing the value of the property.
          */
-        static variant get_property_value(string_view name);
+        static variant get_property_value(std::string_view name);
 
         /*!
          * \brief This function will set the given value \p arg to a property named \p name to the instance \p obj.
@@ -822,14 +781,14 @@ class RTTR_API type
          *
          * \return A bool value, which is true, when the value could be set, otherwise false.
          */
-        bool set_property_value(string_view name, instance obj, argument arg) const;
+        bool set_property_value(std::string_view name, instance obj, argument arg) const;
 
         /*!
          * \brief This function will set the given value \p arg to a property named \p name.
          *
          * \return A bool value, which is true, when the value could be set, otherwise false.
          */
-        static bool set_property_value(string_view name, argument arg);
+        static bool set_property_value(std::string_view name, argument arg);
 
 
         /*!
@@ -839,7 +798,7 @@ class RTTR_API type
          *
          * \return A method with name \p name.
          */
-        method get_method(string_view name) const RTTR_NOEXCEPT;
+        method get_method(std::string_view name) const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a method with the name \p name which match the given parameter type list \p type_list.
@@ -849,7 +808,7 @@ class RTTR_API type
          *
          * \return A method with name \p name.
          */
-        method get_method(string_view name, const std::vector<type>& type_list) const RTTR_NOEXCEPT;
+        method get_method(std::string_view name, const std::vector<type>& type_list) const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a range of all registered *public* methods for this type and
@@ -873,8 +832,8 @@ class RTTR_API type
          * \code{.cpp}
          * #include <rttr/registration>
          *
-         * struct base { void func_1() {} void func_2() {} RTTR_ENABLE() };
-         * struct derived : base { void func_3() {} static void func_4() {} RTTR_ENABLE(base) };
+         * struct base { void func_1() {} void func_2() {} RTTR_DECLARE_ROOT() };
+         * struct derived : base { void func_3() {} static void func_4() {} RTTR_DECLARE_ANCESTORS(base) };
          *
          * RTTR_REGISTRATION
          * {
@@ -925,7 +884,7 @@ class RTTR_API type
          *
          * \return A method with name \p name.
          */
-        static method get_global_method(string_view name) RTTR_NOEXCEPT;
+        static method get_global_method(std::string_view name) RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a global method with the name \p name which match the given parameter list \p params.
@@ -935,7 +894,7 @@ class RTTR_API type
          *
          * \return A method with name \p name and parameter signature \p params.
          */
-        static method get_global_method(string_view name, const std::vector<type>& params) RTTR_NOEXCEPT;
+        static method get_global_method(std::string_view name, const std::vector<type>& params) RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns a range of all registered global methods.
@@ -960,7 +919,7 @@ class RTTR_API type
          * \return A variant object containing the possible return value,
          *         otherwise when it is a void function an empty but valid variant object.
          */
-        variant invoke(string_view name, instance obj, std::vector<argument> args) const;
+        variant invoke(std::string_view name, instance obj, std::vector<argument> args) const;
 
         /*!
          * \brief Invokes a global method named \p name with the specified argument \p args.
@@ -969,7 +928,7 @@ class RTTR_API type
          *         otherwise when it is a void function an empty but valid variant object.
          *         Methods with registered \ref default_arguments will be honored.
          */
-        static variant invoke(string_view name, std::vector<argument> args);
+        static variant invoke(std::string_view name, std::vector<argument> args);
 
         /*!
          * \brief Register a converter func `F`, which will be used internally by the
@@ -1004,8 +963,8 @@ class RTTR_API type
          *
          * See following example code:
          *  \code{.cpp}
-         *   struct base { virtual ~base() {}; RTTR_ENABLE() };
-         *   struct derived : base { virtual ~derived() {}; RTTR_ENABLE(base) };
+         *   struct base { virtual ~base() {}; RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() };
+         *   struct derived : base { virtual ~derived() {}; RTTR_DECLARE_ANCESTORS(base) RTTR_ENABLE_OBJECT_INFO() };
          *
          *   variant var = std::make_shared<derived>();
          *   var.convert(type::get<std::shared_ptr<base>>());    // yields to `false`
@@ -1107,11 +1066,6 @@ class RTTR_API type
     private:
 
         /*!
-         * Constructs an empty and invalid type object.
-         */
-        type() RTTR_NOEXCEPT;
-
-        /*!
          * \brief Constructs a valid type object.
          *
          * \param id The unique id of the data type.
@@ -1184,7 +1138,7 @@ class RTTR_API type
          *
          * \return The full type name.
          */
-        RTTR_INLINE string_view get_full_name() const RTTR_NOEXCEPT;
+        RTTR_INLINE std::string_view get_full_name() const RTTR_NOEXCEPT;
 
         /*!
          * \brief Creates a wrapped value from the given argument \p arg and moves it into the
@@ -1217,7 +1171,7 @@ class RTTR_API type
         friend type detail::create_type(detail::type_data*) RTTR_NOEXCEPT;
 
         template<typename T>
-        friend std::unique_ptr<detail::type_data> detail::make_type_data();
+        friend detail::type_data detail::make_type_data();
 
         template<typename T, typename Tp, typename Converter>
         friend struct detail::variant_data_base_policy;
@@ -1229,8 +1183,60 @@ class RTTR_API type
         detail::type_data* m_type_data;
 };
 
+/*!
+ * \brief Returns a raw \ref type object of type if given type is pointer type.
+ *
+ * \return Returns a raw type if given type is pointer type.
+*/
+RTTR_FORCE_INLINE type try_get_raw_type(type t)
+{
+    return t.is_pointer() ? t.get_raw_type() : t;
+}
+
+/*!
+ * \brief Returns a wrapped \ref type object of type if given type is wrapper type.
+ *
+ * \return Returns a wrapped type if given type is wrapper type.
+*/
+RTTR_FORCE_INLINE type try_get_wrapped_type(type t)
+{
+    return t.is_wrapper() ? t.get_wrapped_type() : t;
+}
+
+/*!
+ * \brief Returns a \ref type object of underlying object or raw \ref type
+ *        of value if the object is a pointer type.
+ *
+ * \return Type of underlying value or raw type of value if the value is pointer type.
+*/
+template<typename T>
+RTTR_FORCE_INLINE type get_type_or_raw_type(const T& obj)
+{
+    return try_get_raw_type(obj.get_type());
+}
+
+/*!
+ * \brief Returns a \ref type object of underlying object or \ref type
+ *        of wrapped value if the object is a wrapper type.
+ *
+ * \return Type of underlying value or type of wrapped value if the value is wrapper type.
+*/
+template<typename T>
+RTTR_FORCE_INLINE type get_type_or_wrapped_type(const T& obj)
+{
+    return try_get_wrapped_type(obj.get_type());
+}
+
 } // end namespace rttr
 
 #include "rttr/detail/type/type_impl.h"
+
+namespace rttr
+{
+
+template <typename T>
+inline constexpr auto get_type_name = rttr::detail::get_type_name<T>;
+
+}
 
 #endif // RTTR_TYPE_H_

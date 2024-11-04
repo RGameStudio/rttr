@@ -30,6 +30,7 @@
 
 #include "rttr/detail/base/core_prerequisites.h"
 #include "rttr/detail/misc/iterator_wrapper.h"
+#include "rttr/detail/misc/misc_type_traits.h"
 #include "rttr/argument.h"
 #include "rttr/variant.h"
 
@@ -170,23 +171,24 @@ struct associative_container_mapper_wrapper : iterator_wrapper_base<Tp>
 
     /////////////////////////////////////////////////////////////////////////
 
-    template<typename..., typename V = value_t, enable_if_t<std::is_void<V>::value && !std::is_const<ConstType>::value, int> = 0>
+    template<bool Move, typename..., typename V = value_t, enable_if_t<std::is_void<V>::value && !std::is_const<ConstType>::value, int> = 0>
     static bool insert_key(void* container, argument& key, iterator_data& itr)
     {
-        if (key.get_type() == ::rttr::type::get<key_t>())
+        if (key.is_type<key_t>())
         {
-            auto ret = base_class::insert_key(get_container(container), key.get_value<key_t>());
+            using key_ref_t = std::conditional_t<Move, key_t&&, key_t>;
+            auto ret = base_class::insert_key(get_container(container), key.get_value<key_ref_t>());
             itr_wrapper::create(itr, ret.first);
             return ret.second;
         }
-        else
+        else // TODO: try conversion?
         {
             end(container, itr);
             return false;
         }
     }
 
-    template<typename..., typename V = value_t, enable_if_t<!std::is_void<V>::value || std::is_const<ConstType>::value, int> = 0>
+    template<bool Move, typename..., typename V = value_t, enable_if_t<!std::is_void<V>::value || std::is_const<ConstType>::value, int> = 0>
     static bool insert_key(void* container, argument& key, iterator_data& itr)
     {
         end(container, itr);
@@ -195,28 +197,43 @@ struct associative_container_mapper_wrapper : iterator_wrapper_base<Tp>
 
     /////////////////////////////////////////////////////////////////////////
 
-    template<typename..., typename V = value_t, enable_if_t<!std::is_void<V>::value && !std::is_const<ConstType>::value, int> = 0>
+    template<bool Move, typename..., typename V = value_t, enable_if_t<!std::is_void<V>::value && !std::is_const<ConstType>::value, int> = 0>
     static bool insert_key_value(void* container, argument& key, argument& value, iterator_data& itr)
     {
-        if (key.get_type() == ::rttr::type::get<key_t>() &&
-            value.get_type() == ::rttr::type::get<value_t>())
+        if (key.is_type<key_t>() && value.is_type<value_t>())
         {
-            auto ret = base_class::insert_key_value(get_container(container), key.get_value<key_t>(), value.get_value<value_t>());
+            using key_ref_t = std::conditional_t<Move, key_t&&, key_t>;
+            using value_ref_t = std::conditional_t<Move, value_t&&, value_t>;
+            auto ret = base_class::insert_key_value(get_container(container), key.get_value<key_ref_t>(), value.get_value<value_ref_t>());
             itr_wrapper::create(itr, ret.first);
             return ret.second;
         }
-        else
+        else // TODO: try conversion?
         {
             end(container, itr);
             return false;
         }
     }
 
-    template<typename..., typename V = value_t, enable_if_t<std::is_void<V>::value || std::is_const<ConstType>::value, int> = 0>
+    template<bool Move, typename..., typename V = value_t, enable_if_t<std::is_void<V>::value || std::is_const<ConstType>::value, int> = 0>
     static bool insert_key_value(void* container, argument& key, argument& value, iterator_data& itr)
     {
         end(container, itr);
         return false;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+
+    template<typename..., typename C = ConstType, enable_if_t<!std::is_const<C>::value, int> = 0>
+    static void reserve(void* container, size_t n)
+    {
+        base_class::reserve(get_container(container), n);
+    }
+
+    template<typename..., typename C = ConstType, enable_if_t<std::is_const<C>::value, int> = 0>
+    static void reserve(void* container, size_t n)
+    {
+        // cannot clear a const container...
     }
 
 };
@@ -307,9 +324,27 @@ struct associative_container_base
         return container.erase(key);
     }
 
-    static std::pair<itr_t, bool> insert_key(container_t& container, const key_t& key)
+    template<typename K>
+    static std::pair<itr_t, bool> insert_key(container_t& container, K&& key)
     {
         return {container.end(), false};
+    }
+
+    static void reserve(container_t& container, size_t n)
+    {
+        reserve_impl<container_t>(container, n);
+    }
+
+private:
+    template<typename U>
+    static detail::enable_if_t<detail::has_reserve<U>::value, void> reserve_impl(U& container, size_t n)
+    {
+        container.reserve(n);
+    }
+
+    template<typename U>
+    static detail::enable_if_t<!detail::has_reserve<U>::value, void> reserve_impl(U& container, size_t n)
+    {
     }
 };
 
@@ -335,9 +370,10 @@ struct associative_container_map_base : associative_container_base<T>
         return itr->second;
     }
 
-    static std::pair<itr_t, bool> insert_key_value(container_t& container, const key_t& key, const value_t& value)
+    template<typename K, typename V>
+    static std::pair<itr_t, bool> insert_key_value(container_t& container, K&& key, V&& value)
     {
-        return container.insert(std::make_pair(key, value));
+        return container.insert(std::make_pair(std::forward<K>(key), std::forward<V>(value)));
     }
 };
 
@@ -357,9 +393,10 @@ struct associative_container_key_base : associative_container_base<T>
         return *itr;
     }
 
-    static std::pair<itr_t, bool> insert_key(container_t& container, const key_t& key)
+    template<typename K>
+    static std::pair<itr_t, bool> insert_key(container_t& container, K&& key)
     {
-        return container.insert(key);
+        return container.insert(std::forward<K>(key));
     }
 };
 
@@ -384,9 +421,10 @@ struct associative_container_base_multi : associative_container_base<T>
         return itr->second;
     }
 
-    static std::pair<itr_t, bool> insert_key_value(container_t& container, const key_t& key, const value_t& value)
+	template<typename K, typename V>
+    static std::pair<itr_t, bool> insert_key_value(container_t& container, K&& key, V&& value)
     {
-        return {container.insert(std::make_pair(key, value)), true};
+        return {container.insert(std::make_pair(std::forward<K>(key), std::forward<V>(value))), true};
     }
 };
 
@@ -399,9 +437,10 @@ struct associative_container_key_base_multi : associative_container_key_base<T>
     using key_t         = typename T::key_type;
     using itr_t         = typename T::iterator;
 
-    static std::pair<itr_t, bool> insert_key(container_t& container, const key_t& key)
+    template<typename K>
+    static std::pair<itr_t, bool> insert_key(container_t& container, K&& key)
     {
-        return {container.insert(key), true};
+        return {container.insert(std::forward<K>(key)), true};
     }
 };
 
@@ -525,6 +564,11 @@ struct associative_container_empty
     static bool insert_key_value(void* container, argument& key, argument& value, iterator_data& itr)
     {
         return false;
+    }
+
+    static void reserve(void* container, size_t n)
+    {
+
     }
 };
 

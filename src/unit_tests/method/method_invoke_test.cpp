@@ -29,7 +29,6 @@
 #include <catch/catch.hpp>
 
 using namespace rttr;
-using namespace std;
 
 
 struct method_invoke_test
@@ -176,7 +175,7 @@ TEST_CASE("method - invoke - std::function", "[method]")
     type t = type::get<method_invoke_test>();
     variant var = t.invoke("func_8", instance(), {42});
     REQUIRE(var.is_type<int>() == true);
-    CHECK(var.get_value<int>() == 42);
+    CHECK(var.get_value_unsafe<int>() == 42);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -188,7 +187,7 @@ TEST_CASE("method - invoke - lambda", "[method]")
     CHECK(param_infos.size() == 1);
     variant var = t.invoke("func_9", instance(), {23});
     REQUIRE(var.is_type<int>() == true);
-    CHECK(var.get_value<int>() == 23);
+    CHECK(var.get_value_unsafe<int>() == 23);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

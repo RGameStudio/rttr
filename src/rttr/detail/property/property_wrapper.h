@@ -54,7 +54,6 @@ template<typename Accessor_Type,
          access_levels Acc_Level,
          typename Get_Policy,
          typename Set_Policy,
-         std::size_t Metadata_Count,
          typename Visitor_List
          >
 class property_wrapper;

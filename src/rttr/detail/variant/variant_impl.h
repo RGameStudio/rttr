@@ -43,6 +43,8 @@ namespace detail
 {
 template<typename T>
 using variant_t = remove_cv_t<remove_reference_t<T>>;
+
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -135,7 +137,7 @@ RTTR_INLINE bool variant::operator>(const variant& other) const
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-RTTR_INLINE T& variant::get_value()
+RTTR_INLINE T& variant::get_value_unsafe()
 {
     using namespace detail;
     auto result = unsafe_variant_cast<variant_t<T>>(this);
@@ -146,7 +148,7 @@ RTTR_INLINE T& variant::get_value()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-RTTR_INLINE const T& variant::get_value() const
+RTTR_INLINE const T& variant::get_value_unsafe() const
 {
     using namespace detail;
     auto result = unsafe_variant_cast<variant_t<T>>(this);
@@ -157,7 +159,128 @@ RTTR_INLINE const T& variant::get_value() const
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-RTTR_INLINE const T& variant::get_wrapped_value() const
+RTTR_INLINE T& variant::get_value_safe()
+{
+    return get_value_safe_impl<T, false>();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+RTTR_INLINE const T& variant::get_value_safe() const
+{
+    using nonRef = std::remove_reference_t<T>;
+    using nonConst = detail::remove_cv_t<nonRef>;
+
+    static const type requested_type = type::get<nonConst>();
+    static const type requested_type_ptr = type::get<std::remove_pointer_t<nonConst>*>();
+
+    const type this_type = get_type();
+
+    // variant holds value
+    if (this_type == requested_type)
+    {
+        return get_value_unsafe<nonConst>();
+    }
+
+    // variant holds pointer to value
+    else if (this_type == requested_type_ptr)
+    {
+        return *get_value_unsafe<nonConst*>();
+    }
+
+    // variant holds wrapper
+    else if (this_type.is_wrapper())
+    {
+        const type wrapped_type = this_type.get_wrapped_type();
+
+        // variant holds wrapper pointing to value
+        if (wrapped_type == requested_type)
+        {
+            return get_wrapped_value_unsafe<nonConst>();
+        }
+
+        // variant holds wrapper pointing to pointer
+        else if (wrapped_type == requested_type_ptr)
+        {
+            return get_wrapped_value_unsafe<nonConst>();
+        }
+
+        // variant holds wrapper pointing to variant
+        else if (wrapped_type == type::get<variant>() || wrapped_type == type::get<variant*>())
+        {
+            return get_wrapped_value_unsafe<variant>().get_value_safe<nonConst>();
+        }
+
+        // variant holds wrapper pointing to wrapper
+        else if (wrapped_type.is_wrapper() || (wrapped_type.is_pointer() &&  wrapped_type.get_raw_type().is_wrapper()))
+        {
+            // if wrapper is not copyable it can lead to an empty variant
+            // we can not do anything with it now
+            return extract_wrapped_value().get_value_safe<nonConst>();
+        }
+
+        // variant holds derived value
+        else if (requested_type.is_base_of(wrapped_type))
+        {
+            // wrapped pointers are not supported as we can not acces to internal storage of wrapper type
+            if constexpr (!std::is_pointer_v<nonConst>)
+            {
+                if (auto ptr = type::apply_offset(const_cast<void*>(reinterpret_cast<const void*>(std::addressof(get_wrapped_value_unsafe<nonConst>()))), wrapped_type, requested_type_ptr); ptr != nullptr)
+                {
+                    return *reinterpret_cast<const T*>(ptr);
+                }
+                else
+                {
+                    RTTR_FAIL("Variant holds derived type '{}' but it doesn't have virtual 'get_derived_info()' method", wrapped_type.get_name());
+                }
+            }
+        }
+    }
+
+    else if (this_type.is_pointer() && this_type.get_raw_type().is_wrapper())
+    {
+        // if wrapper is not copyable it can lead to an empty variant
+        // we can not do anything with it now
+        return extract_pointer_value().get_value_safe<T>();
+    }
+
+    // variant holds derived value
+    else if (requested_type.is_base_of(this_type))
+    {
+        if constexpr (std::is_pointer_v<nonConst>)
+        {
+            if (this_type.is_pointer())
+            {
+                auto& raw = get_value_unsafe<std::remove_pointer_t<nonConst>*>();
+                if (type::apply_offset(const_cast<void*>(reinterpret_cast<const void*>(raw)), this_type, requested_type_ptr) == raw)
+                {
+                    return raw;
+                }
+            }
+        }
+        else
+        {
+            if (auto ptr = type::apply_offset(const_cast<void*>(reinterpret_cast<const void*>(std::addressof(get_value_unsafe<nonConst>()))), this_type, requested_type_ptr); ptr != nullptr)
+            {
+                return *reinterpret_cast<const T*>(ptr);
+            }
+            else
+            {
+                RTTR_FAIL("Variant holds derived type '{}' but it doesn't have virtual 'get_derived_info()' method", this_type.get_name());
+            }
+        }
+    }
+
+    RTTR_FAIL("The variant instance holds object of type '{}' which differs from requested type '{}'", this_type.get_name(), requested_type.get_name());
+    static const nonConst dummy{};
+    return dummy;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+RTTR_INLINE const T& variant::get_wrapped_value_unsafe() const
 {
     detail::data_address_container result{detail::get_invalid_type(), detail::get_invalid_type(), nullptr, nullptr};
     m_policy(detail::variant_policy_operation::GET_ADDRESS_CONTAINER, m_data, result);
@@ -313,11 +436,11 @@ RTTR_INLINE bool variant::convert(T& value) const
     {
         variant var = create_wrapped_value(target_type);
         if ((ok = var.is_valid()) == true)
-            value = var.get_value<T>();
+            value = var.get_value_unsafe<T>();
     }
     else if (target_type == source_type)
     {
-        value = const_cast<variant&>(*this).get_value<T>();
+        value = const_cast<variant&>(*this).get_value_unsafe<T>();
         ok = true;
     }
     else if(try_basic_type_conversion(value))
@@ -393,7 +516,7 @@ RTTR_INLINE detail::enable_if_t<std::is_enum<T>::value, T> variant::convert_impl
         if (ok)
             *ok = could_convert;
 
-        return var.get_value<T>();
+        return var.get_value_unsafe<T>();
     }
 }
 
@@ -493,6 +616,159 @@ RTTR_INLINE const T* variant_cast(const variant* operand) RTTR_NOEXCEPT
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename T, bool Const>
+T& variant::get_value_safe_impl()
+{
+    using nonRef = std::remove_reference_t<T>;
+    using nonConst = detail::remove_cv_t<nonRef>;
+
+    if constexpr (std::is_const_v<nonRef>)
+    {
+        return std::as_const(*this).get_value_safe<nonConst>();
+    }
+
+    static const type requested_type = type::get<nonConst>();
+    static const type requested_type_ptr = type::get<std::remove_pointer_t<nonConst>*>();
+    static const type requested_type_const_ptr = type::get<const std::remove_pointer_t<nonConst>*>();
+
+    const type this_type = get_type();
+
+    // variant holds value
+    if (this_type == requested_type)
+    {
+        if constexpr (!Const)
+        {
+            return get_value_unsafe<nonConst>();
+        }
+        else
+        {
+            RTTR_FAIL("Mutable access requested for const object");
+        }
+    }
+
+    // variant holds pointer to value
+    else if (this_type == requested_type_ptr)
+    {
+        if constexpr (!Const)
+        {
+            return *get_value_unsafe<nonConst*>();
+        }
+        else
+        {
+            RTTR_FAIL("Mutable access requested for const object");
+        }
+    }
+
+    // variant holds wrapper
+    else if (this_type.is_wrapper())
+    {
+        detail::data_address_container result{detail::get_invalid_type(), detail::get_invalid_type(), nullptr, nullptr};
+        m_policy(detail::variant_policy_operation::GET_ADDRESS_CONTAINER, m_data, result);
+
+        if (result.m_data_address_wrapped_type)
+        {
+            // variant holds wrapper pointing to value
+            if (result.m_wrapped_type == requested_type_ptr)
+            {
+                return *const_cast<nonConst*>(reinterpret_cast<const nonConst*>(result.m_data_address_wrapped_type));
+            }
+
+            // variant holds wrapper pointing to const value
+            else if (result.m_wrapped_type == requested_type_const_ptr)
+            {
+                RTTR_FAIL("Mutable access requested for const object");
+            }
+
+            // variant holds wrapper pointing to variant
+            else if (result.m_wrapped_type == type::get<variant*>())
+            {
+                // we don't check for 'const variant*' as it would violate const correctness anyway
+                return const_cast<variant*>(reinterpret_cast<const variant*>(result.m_data_address_wrapped_type))->get_value_safe_impl<nonConst, false>();
+            }
+
+            else if (result.m_wrapped_type == type::get<const variant*>())
+            {
+                return const_cast<variant*>(reinterpret_cast<const variant*>(result.m_data_address_wrapped_type))->get_value_safe_impl<nonConst, true>();
+            }
+
+            // variant holds wrapper pointing to wrapper
+            else if (result.m_wrapped_type.get_raw_type().is_wrapper())
+            {
+                // if wrapper is not copyable it can lead to an empty variant
+                // we can not do anything with it now
+                return extract_wrapped_value().get_value_safe<T>();
+            }
+
+            // variant holds wrapper pointing to derived class
+            else if (!requested_type.is_pointer() && requested_type.is_base_of(result.m_wrapped_type))
+            {
+                if (!result.m_const)
+                {
+                    if (auto ptr = type::apply_offset(const_cast<void*>(result.m_data_address_wrapped_type), result.m_wrapped_type, requested_type_ptr); ptr != nullptr)
+                    {
+                        return *const_cast<T*>(reinterpret_cast<const T*>(ptr));
+                    }
+                    else
+                    {
+                        RTTR_FAIL("Variant holds derived type '{}' but it doesn't have virtual 'get_derived_info()' method", result.m_wrapped_type.get_name());
+                    }
+                }
+                else
+                {
+                    RTTR_FAIL("Mutable access requested for const object");
+                }
+            }
+        }
+    }
+
+    // variant holds pointer to wrapper
+    else if (this_type.is_pointer() && this_type.get_raw_type().is_wrapper())
+    {
+        // if wrapper is not copyable it can lead to an empty variant
+        // we can not do anything with it now
+        return extract_pointer_value().get_value_safe<T>();
+    }
+
+    // variant holds derived value
+    else if (requested_type.is_base_of(this_type))
+    {
+        if constexpr (!Const)
+        {
+            if constexpr (std::is_pointer_v<nonConst>)
+            {
+                if (this_type.is_pointer())
+                {
+                    auto& raw = get_value_unsafe<nonConst>();
+                    if (type::apply_offset(const_cast<void*>(reinterpret_cast<const void*>(raw)), this_type, requested_type_ptr) == raw)
+                    {
+                        return raw;
+                    }
+                }
+            }
+            else
+            {
+                auto ptr = type::apply_offset(const_cast<void*>(reinterpret_cast<const void*>(std::addressof(get_value_unsafe<nonConst>()))), this_type, requested_type_ptr);
+                if (ptr != nullptr)
+                {
+                    return *const_cast<T*>(reinterpret_cast<const T*>(ptr));
+                }
+                else
+                {
+                    RTTR_FAIL("Variant holds derived type '{}' but it doesn't have virtual 'get_derived_info()' method", this_type.get_name());
+                }
+            }
+        }
+        else
+        {
+            RTTR_FAIL("Mutable access requested for const object");
+        }
+    }
+
+    RTTR_FAIL("The variant instance holds object of type '{}' which differs from requested type '{}'", this_type.get_name(), requested_type.get_name());
+    static nonConst dummy{};
+    return dummy;
+}
 
 } // end namespace rttr
 

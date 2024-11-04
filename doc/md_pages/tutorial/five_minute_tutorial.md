@@ -31,14 +31,15 @@ private:
     std::string         m_name;
     std::vector<node*>  m_children;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
     RTTR_REGISTRATION_FRIEND
 };
 }
 ~~~~
 The standard include file of rttr is: `<rttr/type>`<br>
-Remark the two added macros: \ref RTTR_ENABLE() and \ref RTTR_REGISTRATION_FRIEND. They are optional.<br>
-However, when you use class hierarchies you should add to every class: \ref RTTR_ENABLE().<br>
+Remark the three added macros: \ref RTTR_DECLARE_ROOT(), \ref RTTR_ENABLE_OBJECT_INFO() and \ref RTTR_REGISTRATION_FRIEND. They are optional.<br>
+However, when you use class hierarchies you should add to every class: \ref RTTR_DECLARE_ROOT() or \ref RTTR_DECLARE_ANCESTORS() and \ref RTTR_ENABLE_OBJECT_INFO().<br>
 When you want to reflect private data of a class, add: \ref RTTR_REGISTRATION_FRIEND.
 
 Registration
@@ -187,10 +188,11 @@ public:
 private:
     mesh(std::string name, node* parent = nullptr);
 
-    RTTR_ENABLE(node) // include the names of all direct base classes
+    RTTR_DECLARE_ANCESTORS(node) // include the names of all direct base classes
+    RTTR_ENABLE_OBJECT_INFO()
 };
 ~~~~
-Now you put in \ref RTTR_ENABLE() the name of the base class, in this case: `node`.
+Now you put in \ref RTTR_DECLARE_ANCESTORS() the name of the base class, in this case: `node`.
 
 Registration part
 -----------------
@@ -225,12 +227,12 @@ int main(int argc, char *argv[])
 {
     std::shared_ptr<ns_3d::node> obj = ns_3d::mesh::create_mesh("House.obj");
     
-    std::cout << type::get(obj).get_name() << "\n";                     // prints 'std::shared_ptr<ns_3d::node>'
-    std::cout << type::get(obj).get_wrapped_type().get_name() << "\n";  // prints 'ns_3d::node*'
-    std::cout << type::get(*obj.get()).get_name() << "\n";              // prints 'ns_3d::mesh'
+    std::cout << type::get<decltype(obj)>().get_name() << "\n";                    // prints 'std::shared_ptr<ns_3d::node>'
+    std::cout << type::get<decltype(obj)>().get_wrapped_type().get_name() << "\n"; // prints 'ns_3d::node*'
+    std::cout << obj->get_type().get_name() << "\n";                               // prints 'ns_3d::mesh'
 
     // for glvalue expressions the most derived type is returned, in this case: 'ns_3d::mesh'; like typeid()
-    type t = type::get(*obj.get());
+    type t = obj->get_type();
     
     std::cout << "\n";
 

@@ -58,7 +58,7 @@ TEST_CASE("variant::to_uint64() - from bool", "[variant]")
     CHECK(var.convert<uint64_t>(&ok) == 1);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<uint64_t>()) == true);
-    CHECK(var.get_value<uint64_t>() == 1);
+    CHECK(var.get_value_unsafe<uint64_t>() == 1);
 
     // false case
     var = false;
@@ -68,7 +68,7 @@ TEST_CASE("variant::to_uint64() - from bool", "[variant]")
     CHECK(var.convert<uint64_t>(&ok) == 0);
     CHECK(ok == true);
     REQUIRE(var.convert(type::get<uint64_t>()) == true);
-    CHECK(var.get_value<uint64_t>() == 0);
+    CHECK(var.get_value_unsafe<uint64_t>() == 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ TEST_CASE("variant::to_uint64() - from char", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 65);
+        CHECK(var.get_value_unsafe<uint64_t>() == 65);
     }
 
 RTTR_BEGIN_DISABLE_CONDITIONAL_EXPR_WARNING
@@ -119,7 +119,7 @@ TEST_CASE("variant::to_uint64() - from std::string", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 17446744073709551615UL);
+        CHECK(var.get_value_unsafe<uint64_t>() == 17446744073709551615UL);
     }
 
     SECTION("invalid conversion negative")
@@ -158,6 +158,57 @@ TEST_CASE("variant::to_uint64() - from std::string", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant::to_uint64() - from std::string_view", "[variant]")
+{
+    SECTION("valid conversion positive")
+    {
+        variant var = std::string_view("17446744073709551615");
+        REQUIRE(var.can_convert<uint64_t>() == true);
+        bool ok = false;
+
+        CHECK(var.to_uint64(&ok) == 17446744073709551615UL);
+        CHECK(ok == true);
+
+        REQUIRE(var.convert(type::get<uint64_t>()) == true);
+        CHECK(var.get_value_unsafe<uint64_t>() == 17446744073709551615UL);
+    }
+
+    SECTION("invalid conversion negative")
+    {
+        variant var = std::string_view("-2147483640");
+        bool ok = false;
+        CHECK(var.to_uint64(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<uint64_t>()) == false);
+    }
+
+    SECTION("too big")
+    {
+        variant var = std::string_view("20446744073709551615");
+        bool ok = false;
+        CHECK(var.to_uint64(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<uint64_t>()) == false);
+    }
+
+    SECTION("invalid conversion")
+    {
+        variant var = std::string_view("text 34 and text");
+        bool ok = false;
+        CHECK(var.to_uint64(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<uint64_t>()) == false);
+
+        var = std::string_view("34 and text");
+        ok = false;
+        CHECK(var.to_uint64(&ok) == 0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<uint64_t>()) == false);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant::to_uint64() - from int", "[variant]")
 {
     SECTION("valid conversion positive")
@@ -169,7 +220,7 @@ TEST_CASE("variant::to_uint64() - from int", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 50);
+        CHECK(var.get_value_unsafe<uint64_t>() == 50);
     }
 
     SECTION("invalid conversion negative")
@@ -195,7 +246,7 @@ TEST_CASE("variant::to_uint64() - from float", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 214748);
+        CHECK(var.get_value_unsafe<uint64_t>() == 214748);
     }
 
     SECTION("invalid conversion negative")
@@ -230,7 +281,7 @@ TEST_CASE("variant::to_uint64() - from double", "[variant]")
 
         CHECK(ok == true);
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 174407329551615u);
+        CHECK(var.get_value_unsafe<uint64_t>() == 174407329551615u);
     }
 
     SECTION("invalid conversion negative")
@@ -249,7 +300,7 @@ TEST_CASE("variant::to_uint64() - from double", "[variant]")
         CHECK(var.to_uint64(&ok) == 0);
         CHECK(ok == false);
         REQUIRE(var.convert(type::get<uint64_t>()) == false);
-        CHECK(var.get_value<double>() == 19446744073709551615.2);
+        CHECK(var.get_value_unsafe<double>() == 19446744073709551615.2);
     }
 }
 
@@ -266,7 +317,7 @@ TEST_CASE("variant::to_uint64() - from int8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 50);
+        CHECK(var.get_value_unsafe<uint64_t>() == 50);
     }
 
     SECTION("invalid conversion negative")
@@ -292,7 +343,7 @@ TEST_CASE("variant::to_uint64() - from int16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == uint64_t(50));
+        CHECK(var.get_value_unsafe<uint64_t>() == uint64_t(50));
     }
 
     SECTION("invalid conversion negative")
@@ -318,7 +369,7 @@ TEST_CASE("variant::to_uint64() - from int32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == uint64_t(50));
+        CHECK(var.get_value_unsafe<uint64_t>() == uint64_t(50));
     }
 
     SECTION("invalid conversion negative")
@@ -344,7 +395,7 @@ TEST_CASE("variant::to_uint64() - from int64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == uint64_t(50));
+        CHECK(var.get_value_unsafe<uint64_t>() == uint64_t(50));
     }
 
     SECTION("invalid conversion negative")
@@ -370,7 +421,7 @@ TEST_CASE("variant::to_uint64() - from uint8_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 50);
+        CHECK(var.get_value_unsafe<uint64_t>() == 50);
     }
 }
 
@@ -387,7 +438,7 @@ TEST_CASE("variant::to_uint64() - from uint16_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 50);
+        CHECK(var.get_value_unsafe<uint64_t>() == 50);
     }
 }
 
@@ -404,7 +455,7 @@ TEST_CASE("variant::to_uint64() - from uint32_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 50);
+        CHECK(var.get_value_unsafe<uint64_t>() == 50);
     }
 }
 
@@ -421,7 +472,7 @@ TEST_CASE("variant::to_uint64() - from uint64_t", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 3147483640u);
+        CHECK(var.get_value_unsafe<uint64_t>() == 3147483640u);
     }
 }
 
@@ -438,7 +489,7 @@ TEST_CASE("variant::to_uint64() - from enum", "[variant]")
         CHECK(ok == true);
 
         REQUIRE(var.convert(type::get<uint64_t>()) == true);
-        CHECK(var.get_value<uint64_t>() == 17446744073709551615U);
+        CHECK(var.get_value_unsafe<uint64_t>() == 17446744073709551615U);
     }
 
     SECTION("too small")

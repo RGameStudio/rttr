@@ -139,9 +139,10 @@ function(loadFolder FOLDER _HEADER_FILES _SOURCE_FILES)
       list(APPEND ALL_HPP_FILES ${FULL_HEADER_PATH})
     elseif (${headerFile} MATCHES ".*.rc.in$")
       string ( REGEX REPLACE ".rc.in$" ".rc" out_path ${headerFile} )
-      configure_file(${headerFile} ${CMAKE_CURRENT_BINARY_DIR}/${out_path} @ONLY)
-      source_group("Generated Files" FILES ${CMAKE_CURRENT_BINARY_DIR}/${out_path})
-      list(APPEND ALL_HPP_FILES ${CMAKE_CURRENT_BINARY_DIR}/${out_path})
+      set(FULL_HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/${out_path})
+      configure_file(${headerFile} ${FULL_HEADER_PATH} @ONLY)
+      source_group("Generated Files" FILES ${FULL_HEADER_PATH})
+      list(APPEND ALL_HPP_FILES ${FULL_HEADER_PATH})
     elseif (${headerFile} MATCHES ".*.ui$")
         set(FULL_HEADER_PATH ${ABS_PATH_TO_FILES}/${headerFile})
         list(APPEND QT_UI_FILES ${FULL_HEADER_PATH})
@@ -391,6 +392,8 @@ endfunction()
 # target Target name
 ####################################################################################
 function( set_compiler_warnings target)
+  return() # don't break build due to compiler-specific warnings
+
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(WARNINGS "-Werror"
                  "-Wall")
@@ -471,8 +474,12 @@ function(getCompilerName _COMPILER_NAME)
     set(COMPILER_NAME "vs2013")
   elseif(MSVC_VERSION EQUAL 1900)
     set(COMPILER_NAME "vs2015")
-  elseif((MSVC_VERSION EQUAL 1910 OR MSVC_VERSION GREATER 1910) AND (MSVC_VERSION EQUAL 1919 OR MSVC_VERSION LESS 1919))
+  elseif((MSVC_VERSION GREATER_EQUAL 1910) AND (MSVC_VERSION LESS 1920))
     set(COMPILER_NAME "vs2017")
+  elseif((MSVC_VERSION GREATER_EQUAL 1920) AND (MSVC_VERSION LESS 1930))
+    set(COMPILER_NAME "vs2019")
+  elseif((MSVC_VERSION GREATER_EQUAL 1930) AND (MSVC_VERSION LESS 1940))
+    set(COMPILER_NAME "vs2022")
   elseif(CMAKE_COMPILER_IS_GNUCXX)
     set(COMPILER_NAME "gcc")
     if(WIN32)
@@ -525,87 +532,3 @@ macro(generateLibraryVersionVariables MAJOR MINOR PATCH PRODUCT_NAME PRODUCT_CPY
   set(LIBRARY_COPYRIGHT ${PRODUCT_CPY_RIGHT})
   set(LIBRARY_LICENSE ${PRODUCT_LICENSE})
 endmacro()
-
-function(get_latest_supported_cxx CXX_STANDARD)
-    if (POLICY CMP0067)
-        cmake_policy(SET CMP0067 NEW)
-    endif()
-    
-    # we need to set CMAKE_CXX_STANDARD in order to use the flags for 'check_cxx_source_compiles'
-    if(${CMAKE_VERSION} VERSION_LESS "3.8.0") 
-        set(CMAKE_CXX_STANDARD 14)
-    else()
-        set(CMAKE_CXX_STANDARD 17)
-    endif()    
-
-    include(CheckCXXSourceCompiles)
-
-    check_cxx_source_compiles("
-                              #include <type_traits>
-                              typedef void F();
-                              typedef void G() noexcept;
-                              
-                              std::enable_if<
-                                  !std::is_same<F, G>::value,
-                                  int
-                              >::type i = 42;
-                              
-                              int main() { return 0; }
-                              "
-                              HAS_NO_EXCEPT_TYPE_SIGNATURE_SUPPORT)
-
-    check_cxx_source_compiles("
-                              #include <type_traits>
-                              struct foo { void func() const noexcept {} };
-                              template<typename T>
-                              void test_func(T)
-                              {
-                                  static_assert(std::is_member_function_pointer<T>::value, \"Failed\");
-                              }
-                              int main() { test_func(&foo::func); return 0; }
-                              " 
-                              HAS_STL_NO_EXCEPT_TYPE_SIGNATURE_SUPPORT)
-                              
-    check_cxx_source_compiles("
-                              constexpr int abs(int x)
-                              {
-                                  if(x < 0) x = -x;
-                                  return x;
-                              }
-                              
-                              int main() { }
-                              "
-                              HAS_CXX_CONSTEXPR)
-                              
-    check_cxx_source_compiles( "
-                               #include <type_traits>
-                               template<typename T>
-                               struct template_type_trait : std::false_type {};
-                               
-                               template<template < bool > class T, bool N>
-                               struct template_type_trait<T<N>> : std::true_type {};
-                               
-                               template<template <std::size_t> class T, std::size_t N>
-                               struct template_type_trait<T<N>> : std::true_type {};
-                               
-                               template<std::size_t T>
-                               struct bar{};
-                               
-                               int main() { static bool foo = template_type_trait<bar<100>>::value;}
-                               "
-                               HAS_PARTIAL_SPECIALIZATION_FOR_ARRAYS)
-
-    if (HAS_NO_EXCEPT_TYPE_SIGNATURE_SUPPORT AND HAS_STL_NO_EXCEPT_TYPE_SIGNATURE_SUPPORT AND
-        HAS_PARTIAL_SPECIALIZATION_FOR_ARRAYS)
-        set(MAX_CXX_STD 17)
-    else()
-        if (HAS_CXX_CONSTEXPR)
-            set(MAX_CXX_STD 14)
-        else()
-            set(MAX_CXX_STD 11)
-        endif()
-    endif()
-    
-    set(${CXX_STANDARD} ${MAX_CXX_STD} PARENT_SCOPE)
-endfunction()
-

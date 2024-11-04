@@ -122,63 +122,63 @@ RTTR_INLINE type::type_id type::get_id() const RTTR_NOEXCEPT
 
 RTTR_INLINE bool type::is_valid() const RTTR_NOEXCEPT
 {
-    return m_type_data->is_valid;
+    return m_type_data->m_is_valid;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE type::operator bool() const RTTR_NOEXCEPT
 {
-    return m_type_data->is_valid;
+    return m_type_data->m_is_valid;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE type type::get_raw_type() const RTTR_NOEXCEPT
 {
-    return type(m_type_data->raw_type_data);
+    return type(m_type_data->m_raw_type_data);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE type type::get_wrapped_type() const RTTR_NOEXCEPT
 {
-    return type(m_type_data->wrapped_type);
+    return type(m_type_data->m_wrapped_type);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE type type::get_raw_array_type() const RTTR_NOEXCEPT
 {
-    return type(m_type_data->array_raw_type);
+    return type(m_type_data->m_array_raw_type);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-RTTR_INLINE string_view type::get_name() const RTTR_NOEXCEPT
+RTTR_INLINE std::string_view type::get_name() const RTTR_NOEXCEPT
 {
-    return m_type_data->name;
+    return m_type_data->m_name;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-RTTR_INLINE string_view type::get_full_name() const RTTR_NOEXCEPT
+RTTR_INLINE std::string_view type::get_full_name() const RTTR_NOEXCEPT
 {
-    return m_type_data->type_name;
+    return m_type_data->m_type_name;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE std::size_t type::get_sizeof() const RTTR_NOEXCEPT
 {
-    return m_type_data->get_sizeof;
+    return m_type_data->m_get_sizeof;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE std::size_t type::get_pointer_dimension() const RTTR_NOEXCEPT
 {
-    return m_type_data->get_pointer_dimension;
+    return m_type_data->m_get_pointer_dimension;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -262,7 +262,7 @@ RTTR_INLINE bool type::is_member_function_pointer() const RTTR_NOEXCEPT
 
 RTTR_INLINE bool type::is_wrapper() const RTTR_NOEXCEPT
 {
-    return m_type_data->wrapped_type->is_valid;
+    return m_type_data->m_wrapped_type->m_is_valid;
 }
 
 
@@ -270,7 +270,7 @@ RTTR_INLINE bool type::is_wrapper() const RTTR_NOEXCEPT
 
 RTTR_INLINE variant type::create_variant(const argument& data) const
 {
-    return m_type_data->create_variant(data);
+    return m_type_data->m_create_variant(data);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -377,15 +377,6 @@ template<>
 RTTR_INLINE type type::get<detail::invalid_type>() RTTR_NOEXCEPT
 {
     return detail::get_invalid_type();
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-template<typename T>
-RTTR_INLINE type type::get(T&& object) RTTR_NOEXCEPT
-{
-    using remove_ref = typename std::remove_reference<T>::type;
-    return detail::type_from_instance<T, detail::has_get_type_func<T>::value && !std::is_pointer<remove_ref>::value>::get(std::forward<T>(object));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

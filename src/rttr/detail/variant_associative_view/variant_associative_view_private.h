@@ -63,18 +63,21 @@ class RTTR_LOCAL variant_associative_view_private
             m_erase_func(associative_container_empty::erase),
             m_clear_func(associative_container_empty::clear),
             m_equal_range_func(associative_container_empty::equal_range),
-            m_insert_func_key(associative_container_empty::insert_key),
-            m_insert_func_key_value(associative_container_empty::insert_key_value)
+            m_insert_copy_func_key(associative_container_empty::insert_key),
+            m_insert_copy_func_key_value(associative_container_empty::insert_key_value),
+            m_insert_move_func_key(associative_container_empty::insert_key),
+            m_insert_move_func_key_value(associative_container_empty::insert_key_value),
+            m_reserve_func(associative_container_empty::reserve)
         {
         }
 
         template<typename T, typename RawType = raw_type_t<T>, typename ConstType = remove_pointer_t<T>>
         variant_associative_view_private(const T& container) RTTR_NOEXCEPT
-        :   m_type(type::get<RawType>()),
+            :   m_type(type::get<RawType>()),
             m_key_type(type::get<typename associative_container_mapper<RawType>::key_t>()),
             m_value_type(type::get<conditional_t<std::is_void<typename associative_container_mapper<RawType>::value_t>::value,
-                                                invalid_type,
-                                                typename associative_container_mapper<RawType>::value_t>>()),
+                invalid_type,
+                typename associative_container_mapper<RawType>::value_t>>()),
             m_container(as_void_ptr(container)),
             m_get_is_empty_func(associative_container_mapper_wrapper<RawType, ConstType>::is_empty),
             m_get_size_func(associative_container_mapper_wrapper<RawType, ConstType>::get_size),
@@ -90,8 +93,11 @@ class RTTR_LOCAL variant_associative_view_private
             m_erase_func(associative_container_mapper_wrapper<RawType, ConstType>::erase),
             m_clear_func(associative_container_mapper_wrapper<RawType, ConstType>::clear),
             m_equal_range_func(associative_container_mapper_wrapper<RawType, ConstType>::equal_range),
-            m_insert_func_key(associative_container_mapper_wrapper<RawType, ConstType>::insert_key),
-            m_insert_func_key_value(associative_container_mapper_wrapper<RawType, ConstType>::insert_key_value)
+            m_insert_copy_func_key(associative_container_mapper_wrapper<RawType, ConstType>::template insert_key<false>),
+            m_insert_copy_func_key_value(associative_container_mapper_wrapper<RawType, ConstType>::template insert_key_value<false>),
+            m_insert_move_func_key(associative_container_mapper_wrapper<RawType, ConstType>::template insert_key<true>),
+            m_insert_move_func_key_value(associative_container_mapper_wrapper<RawType, ConstType>::template insert_key_value<true>),
+            m_reserve_func(associative_container_mapper_wrapper<RawType, ConstType>::reserve)
         {
         }
 
@@ -194,14 +200,29 @@ class RTTR_LOCAL variant_associative_view_private
             return m_erase_func(m_container, key);
         }
 
-        RTTR_INLINE bool insert(argument& key, iterator_data& itr)
+        RTTR_INLINE bool insert_copy(argument& key, iterator_data& itr)
         {
-            return m_insert_func_key(m_container, key, itr);
+            return m_insert_copy_func_key(m_container, key, itr);
         }
 
-        RTTR_INLINE bool insert(argument& key, argument& value, iterator_data& itr)
+        RTTR_INLINE bool insert_copy(argument& key, argument& value, iterator_data& itr)
         {
-            return m_insert_func_key_value(m_container, key, value, itr);
+            return m_insert_copy_func_key_value(m_container, key, value, itr);
+        }
+
+		RTTR_INLINE bool insert_move(argument& key, iterator_data& itr)
+        {
+            return m_insert_move_func_key(m_container, key, itr);
+        }
+
+        RTTR_INLINE bool insert_move(argument& key, argument& value, iterator_data& itr)
+        {
+            return m_insert_move_func_key_value(m_container, key, value, itr);
+        }
+
+        RTTR_INLINE void reserve(size_t n)
+        {
+            m_reserve_func(m_container, n);
         }
 
     private:
@@ -225,6 +246,8 @@ class RTTR_LOCAL variant_associative_view_private
         using insert_func_key   = bool(*)(void* container, argument& key, detail::iterator_data& itr);
         using insert_func_key_value = bool(*)(void* container, argument& key, argument& value, detail::iterator_data& itr);
 
+        using reserve_func      = void(*)(void* container, size_t n);
+
         type                    m_type;
         type                    m_key_type;
         type                    m_value_type;
@@ -243,8 +266,11 @@ class RTTR_LOCAL variant_associative_view_private
         erase_func              m_erase_func;
         clear_func              m_clear_func;
         equal_range_func        m_equal_range_func;
-        insert_func_key         m_insert_func_key;
-        insert_func_key_value   m_insert_func_key_value;
+        insert_func_key         m_insert_copy_func_key;
+        insert_func_key_value   m_insert_copy_func_key_value;
+        insert_func_key         m_insert_move_func_key;
+        insert_func_key_value   m_insert_move_func_key_value;
+        reserve_func            m_reserve_func;
 };
 
 } // end namespace detail

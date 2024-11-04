@@ -55,7 +55,8 @@ public:
 private:
     int hp;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 #endif // RTTR_PLAYER_H_

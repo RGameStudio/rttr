@@ -27,6 +27,7 @@
 
 #include "rttr/constructor.h"
 #include "rttr/detail/constructor/constructor_wrapper_base.h"
+#include "rttr/hash_string_constexpr.h"
 #include "rttr/argument.h"
 
 #include <utility>
@@ -100,7 +101,7 @@ type constructor::get_declaring_type() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-string_view constructor::get_signature() const RTTR_NOEXCEPT
+std::string_view constructor::get_signature() const RTTR_NOEXCEPT
 {
     return m_wrapper->get_signature();
 }
@@ -114,7 +115,7 @@ array_range<parameter_info> constructor::get_parameter_infos() const RTTR_NOEXCE
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-variant constructor::get_metadata(const variant& key) const
+const variant& constructor::get_metadata(uint64_t key) const
 {
     return m_wrapper->get_metadata(key);
 }

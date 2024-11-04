@@ -21,7 +21,8 @@ struct test_class
 
     int m_value;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 ~~~~

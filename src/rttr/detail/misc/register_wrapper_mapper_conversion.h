@@ -82,7 +82,7 @@ struct create_wrapper_conversion<DerivedClass, BaseClass, U...>
 {
     static RTTR_INLINE void perform()
     {
-        static_assert(has_base_class_list<BaseClass>::value, "The parent class has no base class list defined - please use the macro RTTR_ENABLE");
+        static_assert(has_base_class_list<BaseClass>::value, "The parent class has no base class list defined - please use the macro RTTR_DECLARE_ROOT or RTTR_DECLARE_ANCESTORS");
         type::register_converter_func(wrapper_mapper<DerivedClass>::template convert<BaseClass>);
         using return_type = typename function_traits<decltype(&wrapper_mapper<DerivedClass>::template convert<BaseClass>)>::return_type;
         // TO DO: remove raw_type_t, std::shared_ptr<const T> should also be converted, when necessary

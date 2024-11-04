@@ -49,22 +49,21 @@ target_link_libraries(unit_tests RTTR::Core unit_test_base Catch2::Catch)
 add_dependencies(unit_tests RTTR::Core)
 set_target_properties(unit_tests PROPERTIES DEBUG_POSTFIX ${RTTR_DEBUG_POSTFIX}
                                             FOLDER "Testing"
-                                            INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}"
-                                            CXX_STANDARD ${MAX_CXX_STANDARD})
+                                            INSTALL_RPATH "${RTTR_EXECUTABLE_INSTALL_RPATH}")
 
 set_compiler_warnings(unit_tests)
 
 if (MSVC)
-    target_compile_options(unit_tests PRIVATE /bigobj)
+    target_compile_options(unit_tests PRIVATE /bigobj) 
 endif()
 
 # run tests
 add_custom_target(run_tests ALL
-                  COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib "$<TARGET_FILE:unit_tests>"
+                  COMMAND "${CMAKE_COMMAND}" -E env LD_LIBRARY_PATH="${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "$<TARGET_FILE:unit_tests>"
                   DEPENDS unit_tests
                   COMMENT "Running unit_tests")
-
-set_target_properties(run_tests PROPERTIES
+                  
+set_target_properties(run_tests PROPERTIES 
                                 FOLDER "Testing")
 
 add_subdirectory(plugin)

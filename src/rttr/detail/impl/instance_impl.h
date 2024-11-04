@@ -74,10 +74,10 @@ RTTR_INLINE instance::instance(T& data) RTTR_NOEXCEPT
 template<typename Target_Type>
 RTTR_INLINE Target_Type* instance::try_convert() const RTTR_NOEXCEPT
 {
-    Target_Type* target = static_cast<Target_Type*>(type::apply_offset(const_cast<instance*>(this)->m_data_container.m_data_address, m_data_container.m_type, type::get<Target_Type>()));
+    Target_Type* target = static_cast<Target_Type*>(type::apply_offset(const_cast<void*>(const_cast<instance*>(this)->m_data_container.m_data_address), m_data_container.m_type, type::get<Target_Type>()));
 
     if (!target)
-        return (static_cast<Target_Type*>(type::apply_offset(const_cast<instance*>(this)->m_data_container.m_data_address_wrapped_type, m_data_container.m_wrapped_type, type::get<Target_Type>())));
+        return (static_cast<Target_Type*>(type::apply_offset(const_cast<void*>(const_cast<instance*>(this)->m_data_container.m_data_address_wrapped_type), m_data_container.m_wrapped_type, type::get<Target_Type>())));
 
     return target;
 }
@@ -111,7 +111,7 @@ RTTR_INLINE type instance::get_type() const RTTR_NOEXCEPT { return m_data_contai
 
 RTTR_INLINE type instance::get_derived_type() const RTTR_NOEXCEPT
 {
-    return type::get_derived_type(const_cast<instance*>(this)->m_data_container.m_data_address, m_data_container.m_type);
+    return type::get_derived_type(const_cast<void*>(const_cast<instance*>(this)->m_data_container.m_data_address), m_data_container.m_type);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

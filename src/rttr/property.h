@@ -32,9 +32,9 @@
 #include "rttr/detail/misc/class_item_mapper.h"
 #include "rttr/parameter_info.h"
 #include "rttr/access_levels.h"
-#include "rttr/string_view.h"
 
 #include <string>
+#include <string_view>
 
 namespace rttr
 {
@@ -186,7 +186,7 @@ class RTTR_API property
          *
          * \return Name of the property.
          */
-        string_view get_name() const RTTR_NOEXCEPT;
+        std::string_view get_name() const RTTR_NOEXCEPT;
 
         /*!
          * \brief Returns the underlying \ref type object of this property.
@@ -221,6 +221,19 @@ class RTTR_API property
         bool set_value(instance object, argument arg) const;
 
         /*!
+         * \brief Set the property of the given instance \p object by moving from given value \p arg.
+         *
+         * \remark  When the property is declared as \ref is_readonly "read only" this function will return false.
+         *          When you have a static property just pass an empty instance as object argument.
+         *          When the property is not valid, this function will return false.
+         *
+         * \see get_value().
+         *
+         * \return The return value indicates whether the operation was successful or not.
+         */
+        bool set_value_move(instance object, argument arg) const;
+
+        /*!
          * \brief Returns the current property value of the given instance \p object.
          *
          * \remark When the property is static, you can forward an empty instance.
@@ -239,7 +252,7 @@ class RTTR_API property
          *
          * \return A variant object, containing arbitrary data.
          */
-        variant get_metadata(const variant& key) const;
+        const variant& get_metadata(uint64_t key) const;
 
         /*!
          * \brief Returns true if this property is the same like the \p other.

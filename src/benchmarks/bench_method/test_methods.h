@@ -38,8 +38,8 @@
 namespace ns_foo
 {
 
-#define CLASS(CLASS_NAME, NUMBER) struct CLASS_NAME { virtual ~CLASS_NAME(){} void RTTR_CAT(method_,NUMBER)() { } virtual void method_v() { } RTTR_ENABLE() private: double dummy_double_value; std::string dummy_string_value; };
-#define CLASS_INHERIT(CLASS1, CLASS2, NUMBER) struct CLASS1 : CLASS2 { void RTTR_CAT(method_,NUMBER)() { } virtual void method_v() { } RTTR_ENABLE(CLASS2) private: double dummy_double_value; std::string dummy_string_value; };
+#define CLASS(CLASS_NAME, NUMBER) struct CLASS_NAME { virtual ~CLASS_NAME(){} void RTTR_CAT(method_,NUMBER)() { } virtual void method_v() { } RTTR_DECLARE_ROOT() RTTR_ENABLE_OBJECT_INFO() private: double dummy_double_value; std::string dummy_string_value; };
+#define CLASS_INHERIT(CLASS1, CLASS2, NUMBER) struct CLASS1 : CLASS2 { void RTTR_CAT(method_,NUMBER)() { } virtual void method_v() { } RTTR_DECLARE_ANCESTORS(CLASS2) RTTR_ENABLE_OBJECT_INFO() private: double dummy_double_value; std::string dummy_string_value; };
 
 struct method_class
 {
@@ -78,7 +78,8 @@ struct method_class
     int value_7 = 0;
     int value_8 = 0;
 
-    RTTR_ENABLE()
+    RTTR_DECLARE_ROOT()
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_class_d_1 : method_class
@@ -87,7 +88,8 @@ struct method_class_d_1 : method_class
     void method_1()                  { }
     virtual void method_v()          { }
 
-    RTTR_ENABLE(method_class)
+    RTTR_DECLARE_ANCESTORS(method_class)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 
@@ -99,7 +101,8 @@ struct method_class_d_3 : method_class_d_2
     void method_3()                  { }
     virtual void method_v()          { }
 
-    RTTR_ENABLE(method_class_d_2)
+    RTTR_DECLARE_ANCESTORS(method_class_d_2)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 CLASS_INHERIT(method_class_d_4, method_class_d_3, 4)
@@ -112,7 +115,8 @@ struct method_class_d_6 : method_class_d_5
     void method_6()                  { }
     virtual void method_v()          { }
 
-    RTTR_ENABLE(method_class_d_5)
+    RTTR_DECLARE_ANCESTORS(method_class_d_5)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct method_class_d_7 : method_class_d_6
@@ -121,7 +125,8 @@ struct method_class_d_7 : method_class_d_6
     void method_7()                  { }
     virtual void method_v()          { }
 
-    RTTR_ENABLE(method_class_d_6)
+    RTTR_DECLARE_ANCESTORS(method_class_d_6)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 
@@ -154,7 +159,8 @@ struct class_multiple_final : class_multiple_5A, class_multiple_5B, class_multip
     void method_18()        { }
     virtual void method_v() { }
 
-    RTTR_ENABLE(class_multiple_5A, class_multiple_5B, class_multiple_5C)
+    RTTR_DECLARE_ANCESTORS(class_multiple_5A, class_multiple_5B, class_multiple_5C)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 struct class_multiple_final_D : class_multiple_final
@@ -162,7 +168,8 @@ struct class_multiple_final_D : class_multiple_final
     void method_19()        { }
     virtual void method_v() { }
 
-    RTTR_ENABLE(class_multiple_final)
+    RTTR_DECLARE_ANCESTORS(class_multiple_final)
+    RTTR_ENABLE_OBJECT_INFO()
 };
 
 } // end namespace ns_foo

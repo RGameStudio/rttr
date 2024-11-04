@@ -52,6 +52,9 @@ struct prop_misc_test
 
 int prop_misc_test::s_value = 0;
 
+constexpr uint64_t c_text_meta_key = rttr::hash_string("Text");
+constexpr uint64_t c_invalid_key_meta_key = rttr::hash_string("Invalid Key");
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_REGISTRATION
@@ -59,12 +62,13 @@ RTTR_REGISTRATION
     registration::class_<prop_misc_test>("prop_misc_test")
         .property("value_1", &prop_misc_test::value_1)
         (
-            metadata("Text", "This is some description text")
+            metadata(c_text_meta_key, "This is some description text"),
+            policy::prop::as_copy
         )
-        .property_readonly("value_2", &prop_misc_test::value_2)
-        .property("color", &prop_misc_test::color_value)
-        .property("list", &prop_misc_test::list)
-        .property("s_value", &prop_misc_test::s_value)
+        .property_readonly("value_2", &prop_misc_test::value_2) (policy::prop::as_copy)
+        .property("color", &prop_misc_test::color_value) (policy::prop::as_copy)
+        .property("list", &prop_misc_test::list) (policy::prop::as_copy)
+        .property("s_value", &prop_misc_test::s_value) (policy::prop::as_copy)
        ;
 
     registration::enumeration<color>("color")
@@ -203,12 +207,12 @@ TEST_CASE("property - get_declaring_type()", "[property]")
 TEST_CASE("property - get_metadata()", "[property]")
 {
     property prop = type::get<prop_misc_test>().get_property("value_1");
-    CHECK(prop.get_metadata("Text") == "This is some description text");
-    CHECK(prop.get_metadata("Invalid Key").is_valid() == false);
+    CHECK(prop.get_metadata(c_text_meta_key) == "This is some description text");
+    CHECK(prop.get_metadata(c_invalid_key_meta_key).is_valid() == false);
 
     prop = type::get<prop_misc_test>().get_property("");
     CHECK(prop.is_valid() == false);
-    CHECK(prop.get_metadata("Invalid Key").is_valid() == false);
+    CHECK(prop.get_metadata(c_invalid_key_meta_key).is_valid() == false);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

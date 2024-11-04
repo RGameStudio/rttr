@@ -57,8 +57,6 @@ namespace detail
  *
  * See following example for a typical usage:
  *
- * Put the \ref RTTR_ENABLE() macro inside the class declaration, when you will inherit from this class,
- * otherwise you can omit the macro.
  * \code{.cpp}
  *  #include <rttr/type>
  *  struct Mesh
@@ -75,7 +73,7 @@ namespace detail
  *      };
  *
  *      void setDirection(const Vector3 &vec, E_TransformSpace ts = TS_LOCAL);
- *      RTTR_ENABLE()
+ *
  *  private:
  *      Vector3d _pos;
  *  };
@@ -135,7 +133,7 @@ public:
              * \param name The name of the class as string literal. Can be retrieved later via type::get_name().
              *
              */
-            class_(string_view name);
+            class_(std::string_view name);
             ~class_();
 
 
@@ -193,7 +191,7 @@ public:
              * \return A \ref bind object, in order to chain more calls.
              */
             template<typename A, typename acc_level = detail::public_access, typename Tp = typename std::enable_if<detail::contains<acc_level, detail::access_levels_list>::value>::type>
-            bind<detail::prop, Class_Type, A, acc_level, Visitor_List> property(string_view name, A acc, acc_level level = acc_level());
+            bind<detail::prop, Class_Type, A, acc_level, Visitor_List> property(std::string_view name, A acc, acc_level level = acc_level());
 
             /*!
              * \brief Register a read only property to this class.
@@ -211,7 +209,7 @@ public:
              * \return A \ref bind object, in order to chain more calls.
              */
             template<typename A, typename acc_level = detail::public_access, typename Tp = typename std::enable_if<detail::contains<acc_level, detail::access_levels_list>::value>::type>
-            bind<detail::prop_readonly, Class_Type, A, acc_level, Visitor_List> property_readonly(string_view name, A acc, acc_level level = acc_level());
+            bind<detail::prop_readonly, Class_Type, A, acc_level, Visitor_List> property_readonly(std::string_view name, A acc, acc_level level = acc_level());
 
             /*!
              * \brief Register a property to this class.
@@ -231,7 +229,7 @@ public:
              * \return A \ref bind object, in order to chain more calls.
              */
             template<typename A1, typename A2, typename acc_level = detail::public_access, typename Tp = typename std::enable_if<!detail::contains<A2, detail::access_levels_list>::value>::type>
-            bind<detail::prop, Class_Type, A1, A2, acc_level, Visitor_List> property(string_view name, A1 getter, A2 setter, acc_level level = acc_level());
+            bind<detail::prop, Class_Type, A1, A2, acc_level, Visitor_List> property(std::string_view name, A1 getter, A2 setter, acc_level level = acc_level());
 
 
             /*!
@@ -249,7 +247,7 @@ public:
              * \return A \ref bind object, in order to chain more calls.
              */
             template<typename F, typename acc_level = detail::public_access>
-            bind<detail::meth, Class_Type, F, acc_level, Visitor_List> method(string_view name, F f, acc_level level = acc_level());
+            bind<detail::meth, Class_Type, F, acc_level, Visitor_List> method(std::string_view name, F f, acc_level level = acc_level());
 
 
             /*!
@@ -262,7 +260,7 @@ public:
              * \return A \ref bind object, in order to chain more calls.
              */
             template<typename Enum_Type>
-            bind<detail::enum_, Class_Type, Enum_Type> enumeration(string_view name);
+            bind<detail::enum_, Class_Type, Enum_Type> enumeration(std::string_view name);
         private:
             class_(const std::shared_ptr<detail::registration_executer>& reg_exec);
             class_(const class_& other);
@@ -282,13 +280,13 @@ public:
      * \remark The name of the property has to be unique, otherwise it will not be registered.
      *
      * \see property, type::get_global_property(),
-     *                \ref type::get_property_value(string_view) "type::get_property_value()",
-     *                \ref type::set_property_value(string_view, argument) "type::set_property_value"
+     *                \ref type::get_property_value(std::string_view) "type::get_property_value()",
+     *                \ref type::set_property_value(std::string_view, argument) "type::set_property_value"
      *
      * \return A \ref bind object, in order to chain more calls.
      */
     template<typename A, typename Visitor_List = READ_TL(rttr_visitor_list)>
-    static bind<detail::prop, detail::invalid_type, A, detail::public_access, Visitor_List> property(string_view name, A acc);
+    static bind<detail::prop, detail::invalid_type, A, detail::public_access, Visitor_List> property(std::string_view name, A acc);
 
     /*!
      * \brief Register a global read only property.
@@ -300,13 +298,13 @@ public:
      * \remark The name of the property has to be unique, otherwise it will not be registered.
      *
      * \see property, type::get_global_property(),
-     *                \ref type::get_property_value(string_view) "type::get_property_value()",
-     *                \ref type::set_property_value(string_view, argument) "type::set_property_value"
+     *                \ref type::get_property_value(std::string_view) "type::get_property_value()",
+     *                \ref type::set_property_value(std::string_view, argument) "type::set_property_value"
      *
      * \return A \ref bind object, in order to chain more calls.
      */
     template<typename A, typename Visitor_List = READ_TL(rttr_visitor_list)>
-    static bind<detail::prop_readonly, detail::invalid_type, A, detail::public_access, Visitor_List> property_readonly(string_view name, A acc);
+    static bind<detail::prop_readonly, detail::invalid_type, A, detail::public_access, Visitor_List> property_readonly(std::string_view name, A acc);
 
     /*!
      * \brief Register a property to this class.
@@ -318,13 +316,13 @@ public:
      * \remark The name of the property has to be unique, otherwise it will not be registered.
      *
      * \see property, type::get_global_property(),
-     *                \ref type::get_property_value(string_view) "type::get_property_value()",
-     *                \ref type::set_property_value(string_view, argument) "type::set_property_value"
+     *                \ref type::get_property_value(std::string_view) "type::get_property_value()",
+     *                \ref type::set_property_value(std::string_view, argument) "type::set_property_value"
      *
      * \return A \ref bind object, in order to chain more calls.
      */
     template<typename A1, typename A2, typename Visitor_List = READ_TL(rttr_visitor_list)>
-    static bind<detail::prop, detail::invalid_type, A1, A2, detail::public_access, Visitor_List> property(string_view name, A1 getter, A2 setter);
+    static bind<detail::prop, detail::invalid_type, A1, A2, detail::public_access, Visitor_List> property(std::string_view name, A1 getter, A2 setter);
 
     /*!
      * \brief Register a method to this class.
@@ -335,12 +333,12 @@ public:
      * \remark The method name does *not* have to be unique.
      *
      * \see method, type::get_global_method(),
-     *              \ref type::invoke(string_view, std::vector<argument>) "type::invoke()"
+     *              \ref type::invoke(std::string_view, std::vector<argument>) "type::invoke()"
      *
      * \return A \ref bind object, in order to chain more calls.
      */
     template<typename F, typename Visitor_List = READ_TL(rttr_visitor_list)>
-    static bind<detail::meth, detail::invalid_type, F, detail::public_access, Visitor_List> method(string_view name, F f);
+    static bind<detail::meth, detail::invalid_type, F, detail::public_access, Visitor_List> method(std::string_view name, F f);
 
     /*!
      * \brief Register a global enumeration of type \p Enum_Type
@@ -354,7 +352,7 @@ public:
      * \return A \ref bind object, in order to chain more calls.
      */
     template<typename Enum_Type>
-    static bind<detail::enum_, detail::invalid_type, Enum_Type> enumeration(string_view name);
+    static bind<detail::enum_, detail::invalid_type, Enum_Type> enumeration(std::string_view name);
 
     /////////////////////////////////////////////////////////////////////////////////////
 
@@ -643,8 +641,7 @@ auto select_non_const(ReturnType(ClassType::*func)(Args...) noexcept) -> decltyp
  * registration process of reflection information. Use it in the `()` operator of the returned
  * \ref bind object.
  */
-RTTR_INLINE detail::metadata metadata(variant key, variant value);
-
+RTTR_INLINE detail::metadata metadata(uint64_t key, variant value);
 
 /*!
  * The \ref value function should be used to add a mapping from enum `name` to `value`
@@ -654,7 +651,7 @@ RTTR_INLINE detail::metadata metadata(variant key, variant value);
  * \see \ref registration::enumeration
  */
 template<typename Enum_Type>
-RTTR_INLINE detail::enum_data<Enum_Type> value(string_view, Enum_Type value);
+RTTR_INLINE detail::enum_data<Enum_Type> value(std::string_view, Enum_Type value);
 
 /*!
  * The \ref default_arguments function should be used add default arguments,

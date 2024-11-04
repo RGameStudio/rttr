@@ -28,7 +28,6 @@
 #include <rttr/registration>
 
 using namespace rttr;
-using namespace std;
 
 #include <iostream>
 #include <memory>
@@ -197,13 +196,13 @@ TEST_CASE("enumeration - get_values()", "[enumeration]")
         REQUIRE(var.is_type<weekday>() == true);
     }
 
-    CHECK(value_list[0].get_value<weekday>() == weekday::monday);
-    CHECK(value_list[1].get_value<weekday>() == weekday::tuesday);
-    CHECK(value_list[2].get_value<weekday>() == weekday::wednesday);
-    CHECK(value_list[3].get_value<weekday>() == weekday::thursday);
-    CHECK(value_list[4].get_value<weekday>() == weekday::friday);
-    CHECK(value_list[5].get_value<weekday>() == weekday::saturday);
-    CHECK(value_list[6].get_value<weekday>() == weekday::sunday);
+    CHECK(value_list[0].get_value_unsafe<weekday>() == weekday::monday);
+    CHECK(value_list[1].get_value_unsafe<weekday>() == weekday::tuesday);
+    CHECK(value_list[2].get_value_unsafe<weekday>() == weekday::wednesday);
+    CHECK(value_list[3].get_value_unsafe<weekday>() == weekday::thursday);
+    CHECK(value_list[4].get_value_unsafe<weekday>() == weekday::friday);
+    CHECK(value_list[5].get_value_unsafe<weekday>() == weekday::saturday);
+    CHECK(value_list[6].get_value_unsafe<weekday>() == weekday::sunday);
 
     // negative
     e = type::get_by_name("weekday_unknown").get_enumeration();
@@ -234,7 +233,7 @@ TEST_CASE("enumeration - get_metadata()", "[enumeration]")
     variant var = e.get_metadata(ui_metainfo::description);
     REQUIRE(var.is_type<std::string>() == true);
 
-    CHECK(var.get_value<std::string>() == "List of Weekdays.");
+    CHECK(var.get_value_unsafe<std::string>() == "List of Weekdays.");
 
     // negative test
     e = type::get_by_name("weekday_unknown").get_enumeration();

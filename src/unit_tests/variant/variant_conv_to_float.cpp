@@ -58,7 +58,7 @@ TEST_CASE("variant::to_float() - from bool", "[variant]")
     CHECK(var.convert<float>(&ok) == 1.0f);
     CHECK(ok == true);
     CHECK(var.convert(type::get<float>()) == true);
-    CHECK(var.get_value<float>() == 1.0f);
+    CHECK(var.get_value_unsafe<float>() == 1.0f);
 
     // false case
     var = false;
@@ -68,7 +68,7 @@ TEST_CASE("variant::to_float() - from bool", "[variant]")
     CHECK(var.convert<float>(&ok) == 0.0f);
     CHECK(ok == true);
     CHECK(var.convert(type::get<float>()) == true);
-    CHECK(var.get_value<float>() == 0.0f);
+    CHECK(var.get_value_unsafe<float>() == 0.0f);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ TEST_CASE("variant::to_float() - from char", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 65.0);
+        CHECK(var.get_value_unsafe<float>() == 65.0);
     }
 
 RTTR_BEGIN_DISABLE_CONDITIONAL_EXPR_WARNING
@@ -118,7 +118,7 @@ TEST_CASE("variant::to_float() - from std::string", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 5000000000.0f);
+        CHECK(var.get_value_unsafe<float>() == 5000000000.0f);
     }
 
     SECTION("valid conversion negative")
@@ -166,6 +166,65 @@ TEST_CASE("variant::to_float() - from std::string", "[variant]")
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+TEST_CASE("variant::to_float() - from std::string_view", "[variant]")
+{
+    SECTION("valid conversion positive")
+    {
+        variant var = std::string_view("5000000000");
+        REQUIRE(var.can_convert<float>() == true);
+        bool ok = false;
+        CHECK(var.to_float(&ok) == 5000000000.0f);
+        CHECK(ok == true);
+
+        CHECK(var.convert(type::get<float>()) == true);
+        CHECK(var.get_value_unsafe<float>() == 5000000000.0f);
+    }
+
+    SECTION("valid conversion negative")
+    {
+        variant var = std::string_view("-5000000000");
+        bool ok = false;
+        CHECK(var.to_float(&ok) == -5000000000.0f);
+        CHECK(ok == true);
+        CHECK(var.convert(type::get<float>()) == true);
+    }
+
+    SECTION("too big")
+    {
+        variant var = std::string_view("3.40282e+39f");
+        bool ok = false;
+        CHECK(var.to_float(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<float>()) == false);
+    }
+
+    SECTION("too small")
+    {
+        variant var = std::string_view("-3.40282e+39f");
+        bool ok = false;
+        CHECK(var.to_float(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<float>()) == false);
+    }
+
+    SECTION("invalid conversion")
+    {
+        variant var = std::string_view("text 34 and text");
+        bool ok = false;
+        CHECK(var.to_float(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<float>()) == false);
+
+        var = std::string_view("34 and text");
+        ok = false;
+        CHECK(var.to_float(&ok) == 0.0);
+        CHECK(ok == false);
+        CHECK(var.convert(type::get<float>()) == false);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 TEST_CASE("variant::to_float() - from int", "[variant]")
 {
     SECTION("valid conversion positive")
@@ -177,7 +236,7 @@ TEST_CASE("variant::to_float() - from int", "[variant]")
 
         CHECK(ok == true);
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 2147483640.0f);
+        CHECK(var.get_value_unsafe<float>() == 2147483640.0f);
     }
 
     SECTION("valid conversion negative")
@@ -203,7 +262,7 @@ TEST_CASE("variant::to_float() - from float", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == Approx(214748.9));
+        CHECK(var.get_value_unsafe<float>() == Approx(214748.9));
     }
 
     SECTION("valid conversion negative")
@@ -229,7 +288,7 @@ TEST_CASE("variant::to_float() - from double", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == Approx(5000000000.9));
+        CHECK(var.get_value_unsafe<float>() == Approx(5000000000.9));
     }
 
     SECTION("valid conversion negative")
@@ -273,7 +332,7 @@ TEST_CASE("variant::to_float() - from int8_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 50.0f);
+        CHECK(var.get_value_unsafe<float>() == 50.0f);
     }
 
     SECTION("valid conversion negative")
@@ -299,7 +358,7 @@ TEST_CASE("variant::to_float() - from int16_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 32760.0f);
+        CHECK(var.get_value_unsafe<float>() == 32760.0f);
     }
 
     SECTION("valid conversion negative")
@@ -325,7 +384,7 @@ TEST_CASE("variant::to_float() - from int32_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 2147483640.0f);
+        CHECK(var.get_value_unsafe<float>() == 2147483640.0f);
     }
 
     SECTION("valid conversion negative")
@@ -351,7 +410,7 @@ TEST_CASE("variant::to_float() - from int64_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 5000000000.0f);
+        CHECK(var.get_value_unsafe<float>() == 5000000000.0f);
     }
 
     SECTION("valid conversion negative")
@@ -361,7 +420,7 @@ TEST_CASE("variant::to_float() - from int64_t", "[variant]")
         CHECK(var.to_float(&ok) == -5000000000.0f);
         CHECK(ok == true);
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == -5000000000.0f);
+        CHECK(var.get_value_unsafe<float>() == -5000000000.0f);
     }
 }
 
@@ -378,7 +437,7 @@ TEST_CASE("variant::to_float() - from uint8_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 50.0f);
+        CHECK(var.get_value_unsafe<float>() == 50.0f);
     }
 }
 
@@ -395,7 +454,7 @@ TEST_CASE("variant::to_float() - from uint16_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 32760.0f);
+        CHECK(var.get_value_unsafe<float>() == 32760.0f);
     }
 }
 
@@ -412,7 +471,7 @@ TEST_CASE("variant::to_float() - from uint32_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 32760.0f);
+        CHECK(var.get_value_unsafe<float>() == 32760.0f);
     }
 }
 
@@ -429,7 +488,7 @@ TEST_CASE("variant::to_float() - from uint64_t", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 2147483640.0f);
+        CHECK(var.get_value_unsafe<float>() == 2147483640.0f);
     }
 }
 
@@ -446,7 +505,7 @@ TEST_CASE("variant::to_float() - from enum", "[variant]")
         CHECK(ok == true);
 
         CHECK(var.convert(type::get<float>()) == true);
-        CHECK(var.get_value<float>() == 2147483630.0f);
+        CHECK(var.get_value_unsafe<float>() == 2147483630.0f);
     }
 
     SECTION("valid conversion negative")
